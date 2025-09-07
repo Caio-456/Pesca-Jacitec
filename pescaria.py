@@ -8,6 +8,7 @@ screen = pygame.display.set_mode((1000,625))
 pygame.display.set_caption('Pesca')
 clock = pygame.time.Clock()
 
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -28,8 +29,7 @@ class Player(pygame.sprite.Sprite):
         self.rodando = True
         self.i = 0
 
-    def rotacionar(self):
-        cursor_x, cursor_y = pygame.mouse.get_pos()
+    def rotacionar(self, cursor_x, cursor_y):
         anguloRAD = math.atan2(self.rect.centery - cursor_y, self.rect.centerx - cursor_x)
         angulo = (int(math.degrees(anguloRAD)) - 90)
         self.anguloHistorico.append(angulo)
@@ -42,8 +42,8 @@ class Player(pygame.sprite.Sprite):
             self.image = pygame.transform.rotate(self.imageOriginal, -angulo)
             self.rect = self.image.get_rect(center = self.rect.center)
             
-    def update(self):
-        self.rotacionar()
+    def update(self, cursor_x, cursor_y):
+        self.rotacionar(cursor_x, cursor_y)
 
 # Player:
 player = pygame.sprite.GroupSingle()
@@ -57,8 +57,18 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+        
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            click_x, click_y = pygame.mouse.get_pos()
+            print(click_x, click_y)
 
-    player.update()
+    cursor_x, cursor_y = pygame.mouse.get_pos()
+    if cursor_x < 134:
+        pygame.mouse.set_cursor(*pygame.cursors.arrow)
+    else:
+        pygame.mouse.set_cursor(*pygame.cursors.broken_x)
+
+    player.update(cursor_x, cursor_y)
     screen.blit(background, (0,0))
     player.draw(screen)
 
