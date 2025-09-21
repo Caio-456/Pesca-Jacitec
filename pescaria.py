@@ -95,11 +95,11 @@ rotacionar = True
 
 # Particulas
 class Particula(pygame.sprite.Sprite):
-    def __init__(self, posicao):
+    def __init__(self, posicaoMaxima):
         super().__init__()
         self.image = pygame.Surface((3, 2), pygame.SRCALPHA) # SRCALPHA significa que os pixels terão um canal alpha(transparência)
         pygame.draw.circle(self.image, (143, 211, 255), (2, 2), 3) # cor, centro, raio
-        self.rect = self.image.get_rect(center = posicao)
+        self.rect = self.image.get_rect(center = posicaoMaxima)
         self.moverX = random.uniform(-1, 3) # uniform é quando aceita float
         self.moverY = random.uniform(1, 3)
         self.timer = 30
@@ -118,17 +118,65 @@ particulas = pygame.sprite.Group()
 # Background:
 background = pygame.image.load('graficos/background.png').convert()
 
+# Gatosário:
+gatosario = pygame.image.load('graficos/gatosario.png').convert()
+fonte = pygame.font.Font('graficos/pixel-operator.ttf', 18)
+fonte2 = pygame.font.Font('graficos/pixeltype.ttf', 18)
+fonte3 = pygame.font.Font('graficos/monobit.ttf', 18)
+fonte4 = pygame.font.Font('graficos/Jersey10-Regular.ttf', 18)
+
+dialogo1 = 'Parabénnnsss!!!Você está a um passo de ser o novo CEO da Phising good & cheap Enterprise©!'
+dialogo2 = 'Começaremos nossas operações em Gatuma,uma pequena cidade pesqueira entre a Miasília e Peixótina.Uma oportunidade perfeita para subir na sua carreira!'
+dialogo3 = 'Hoje é 9 de Janeiro,ou seja,ainda estamos no período de defeso!!'
+dialogo4 = 'Essa é época onde os pescadores locais tiram férias, e os preços dos peixes aumenta!'
+dialogo5 = 'Nossa meta é arrecadar 200 mil peixes até o fim do período.'
+dialogo6 = 'Controle as operações e mostre teu espirito felino!'
+dialogo7 = 'Ah, só tem um detalhezinho...'
+dialogo8 = 'Talvez estejamos sem verba,por alguns "probleminhas" legais.'
+dialogo9 = 'Mas não se preocupe!Como sou grande,magnífico,inteligente,proativo e resiliente,chamei meu sobrinho pra cuidar disso!'
+dialogo10 = 'Tem uma canoa ali,você pode usa-la para pagar as operações!'
+dialogo11 = 'Boa-sorte-você-consegue-e-tudo-mais-tchau!'
+dialogo = 'Null'
+
+texto = []
+fala = 1
+posicaoMaxima = 0
+posicao = 0
+separacao = 0
+avancar = False
+
+def escrever():
+        global separacao
+        for i in range(posicao):
+            if dialogo[i] in ['c', 'n', 's', 'd']:
+                separacao -= 1
+                screen.blit(texto[i], ((220 + (separacao)), 15))
+            elif dialogo[i - 1] in ['j', 'l']:
+                separacao -= 4
+                screen.blit(texto[i], ((220 + (separacao)), 15))
+            elif dialogo[i - 1] in ['m']:
+                separacao += 3
+                screen.blit(texto[i], ((220 + (separacao)), 15))
+            else:
+                screen.blit(texto[i], ((220 + (separacao)), 15))
+            separacao += 9
+        separacao = 0
+
 # Eventos pygame:
 def processarEventos():
     global click_x, click_y
     global rotacionar
     global moverx, movery
+    global fala
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
 
         if event.type == pygame.MOUSEBUTTONDOWN:
+            if fala % 1 != 0:
+                fala -= 0.1
+            print(fala)
             click_x, click_y = pygame.mouse.get_pos()
             if cursor_x >= 134 and cursor_y >= 80:
                 rotacionar = True
@@ -163,10 +211,51 @@ while True:
     player.update()
     particulas.update()
 
-    # Desenhar:
+
     screen.blit(background, (0,0))
+    screen.blit(gatosario, (153, 8))
+
+    if fala == 1:
+        dialogo = dialogo1
+
+        if posicaoMaxima <= len(dialogo):
+            posicaoMaxima += 1
+        
+        if posicao <= posicaoMaxima:
+            texto_surface = fonte4.render(dialogo[posicao], False, (250, 253, 255))
+            texto.append(texto_surface)
+            print(dialogo[posicao])
+        posicao += 1
+        if posicao == len(dialogo):
+            fala = 2.1
+            transicao = True
+
+    if fala == 2:
+        if transicao is True:
+            posicaoMaxima = 0
+            posicao = 0
+            separacao = 0
+            texto = []
+            transicao = False
+
+        dialogo = dialogo2
+
+        if posicaoMaxima <= len(dialogo):
+            posicaoMaxima += 1
+        
+        if posicao <= posicaoMaxima:
+            texto_surface = fonte4.render(dialogo[posicao], False, (250, 253, 255))
+            texto.append(texto_surface)
+            print(dialogo[posicao])
+        posicao += 1
+        if posicao == len(dialogo):
+            fala = 3
+    
+    escrever()
+
+
+
     particulas.draw(screen)
     player.draw(screen)
-
     pygame.display.update()
     clock.tick(60)
