@@ -91,6 +91,56 @@ player.add(Player())
 rotacionar = False
 travar = True
 
+# Peixes:
+class Peixe(pygame.sprite.Sprite):
+    def __init__(self, tamanho):
+        super().__init__()
+        self.tamanho = tamanho
+        match tamanho:
+            case 1:
+                self.image = pygame.image.load(f"graficos/peixes/peixe1.png").convert_alpha()
+                self.velocidade = 1
+                self.xpos = random.randrange(134, 1000)
+                self.ypos = random.randrange(80, 625)
+            case 2:
+                self.image = pygame.image.load(f"graficos/peixes/peixe1.png").convert_alpha()
+                self.velocidade = 2
+                self.xpos = random.randrange(134, 1000)
+                self.ypos = random.randrange(80, 625)
+            case 3:
+                self.image = pygame.image.load(f"graficos/peixes/peixe3.png").convert_alpha()
+                self.velocidade = 3
+                self.xpos = random.randrange(134, 1000)
+                self.ypos = random.randrange(80, 625)
+            case 4:
+                self.image = pygame.image.load(f"graficos/peixes/peixe4.png").convert_alpha()
+                self.velocidade = 4
+                self.xpos = random.randrange(134, 1000)
+                self.ypos = random.randrange(80, 625)
+
+        self.rect = self.image.get_rect(center = (400,400))
+
+    def movimento(self):
+        if self.rect.x < self.xpos:
+            self.rect.x += self.velocidade
+        if self.rect.x > self.xpos:
+            self.rect.x -= self.velocidade
+        if self.rect.y < self.ypos:
+            self.rect.y += self.velocidade
+        if self.rect.y > self.ypos:
+            self.rect.y -= self.velocidade
+            
+        if self.rect.y == self.ypos and self.rect.x == self.xpos:
+            self.xpos = random.randrange(134, 1000)
+            self.ypos = random.randrange(80, 625)
+        
+
+    def update(self):
+        self.movimento()
+
+peixes = pygame.sprite.Group()
+peixes.add(Peixe(3))
+
 # Particulas
 class Particula(pygame.sprite.Sprite):
     def __init__(self, posicao):
@@ -211,7 +261,7 @@ def processarEventos():
             
             if round((fala % 1), 2) == 0.1:
                 fala = int(fala)
-            transicao = True
+                transicao = True
 
             click_x, click_y = pygame.mouse.get_pos()
             if cursor_x >= 134 and cursor_y >= 80:
@@ -247,6 +297,7 @@ while True:
     # Updates:
     player.update()
     particulas.update()
+    peixes.update()
     
     if fala in dialogos:
         dialogo, proxFala = dialogos[fala]
@@ -273,6 +324,7 @@ while True:
         screen.blit(triangulo, (trianguloX, 45))
         dialogoSistema.escrever()
 
+    peixes.draw(screen)
     particulas.draw(screen)
     player.draw(screen)
 
