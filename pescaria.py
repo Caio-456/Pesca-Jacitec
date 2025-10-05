@@ -255,12 +255,19 @@ dialogos = {
 }
 
 # Background:
-background = pygame.image.load('graficos/background.png').convert()
+background = pygame.image.load('graficos/background.png').convert_alpha()
 
 # Gatosário:
-gatosario = pygame.image.load('graficos/gatosario.png').convert()
-triangulo = pygame.image.load('graficos/triangulo.png').convert()
+gatosario = pygame.image.load('graficos/gatosario.png').convert_alpha()
+triangulo = pygame.image.load('graficos/triangulo.png').convert_alpha()
 trianguloX = 900
+
+# Botões:
+botaoAberto = pygame.image.load('graficos/botoes/botao-aberto.png').convert_alpha()
+botaoFechado = pygame.image.load('graficos/botoes/botao-fechado.png').convert_alpha()
+botoesRect = [ botaoAberto.get_rect(topleft = (7, 90 + (59 * i))) for i in range(1, 8) ]
+
+
 
 # Eventos pygame:
 def processarEventos():
@@ -323,6 +330,13 @@ while True:
         elif proxFala == 12:
             travar = False
 
+
+    # Peixes:
+    #print(len(peixes))
+    if random.randint(1, 5) == 5:
+        if len(peixes) < 300:
+            peixes.add(Peixe(random.randint(1, 27)))
+
     # Blits e draws: 
     screen.blit(background, (0,0))
     
@@ -340,11 +354,12 @@ while True:
         
         screen.blit(triangulo, (trianguloX, 45))
         dialogoSistema.escrever()
+            
+    
+    screen.blit(botaoAberto, (7, (90)))
+    for i in range(1, 9):
+        screen.blit(botaoFechado, (7, (90 + (59 * i))))
 
-    print(len(peixes))
-    if random.randint(1, 5) == 5:
-        if len(peixes) < 300:
-            peixes.add(Peixe(random.randint(1, 27)))
     peixes.draw(screen)
     particulas.draw(screen)
     player.draw(screen)
