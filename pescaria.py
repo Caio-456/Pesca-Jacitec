@@ -93,32 +93,31 @@ travar = True
 
 # Peixes:
 class Peixe(pygame.sprite.Sprite):
+    global confPeixes
+    global peixesPortes
+
     def __init__(self, tamanho):
         super().__init__()
         self.tamanho = tamanho
-        match tamanho:
-            case 1:
-                self.image = pygame.image.load(f"graficos/peixes/peixe1.png").convert_alpha()
-                self.velocidade = 1
-                self.xpos = random.randrange(134, 1000)
-                self.ypos = random.randrange(80, 625)
-            case 2:
-                self.image = pygame.image.load(f"graficos/peixes/peixe1.png").convert_alpha()
-                self.velocidade = 2
-                self.xpos = random.randrange(134, 1000)
-                self.ypos = random.randrange(80, 625)
-            case 3:
-                self.image = pygame.image.load(f"graficos/peixes/peixe3.png").convert_alpha()
-                self.velocidade = 3
-                self.xpos = random.randrange(134, 1000)
-                self.ypos = random.randrange(80, 625)
-            case 4:
-                self.image = pygame.image.load(f"graficos/peixes/peixe4.png").convert_alpha()
-                self.velocidade = 4
-                self.xpos = random.randrange(134, 1000)
-                self.ypos = random.randrange(80, 625)
+        for configuracoes in confPeixes:
+            if tamanho in configuracoes["tamanhos"]:
+                self.image = peixesPortes[configuracoes["sprite"]]
+                self.imagemSemRotacao = self.image
+                self.velocidadeBase = configuracoes["velocidade"]
 
-        self.rect = self.image.get_rect(center = (400,400))
+        self.velocidade = self.novaVelocidade()
+        self.xpos = random.randrange(134, 1000)
+        self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
+        self.rect = self.image.get_rect(center = (500, 900))
+
+    def novaVelocidade(self):
+        return random.uniform(self.velocidadeBase * 0.5, self.velocidadeBase * 1.2) # Uniform também arredonda para inteiro.
+    
+    def rotacionar(self):
+        anguloRAD = math.atan2(self.rect.centery - self.ypos, self.rect.centerx - self.xpos)
+        angulo = (int(math.degrees(anguloRAD)) - 90)
+        self.image = pygame.transform.rotate(self.imagemSemRotacao, -angulo)
+        self.rect = self.image.get_rect(center = self.rect.center)
 
     def movimento(self):
         if self.rect.x < self.xpos:
@@ -130,16 +129,34 @@ class Peixe(pygame.sprite.Sprite):
         if self.rect.y > self.ypos:
             self.rect.y -= self.velocidade
             
-        if self.rect.y == self.ypos and self.rect.x == self.xpos:
+        if abs(self.rect.y - self.ypos) < 10 and abs(self.rect.x - self.xpos) < 10:
+            self.velocidade = self.novaVelocidade()
             self.xpos = random.randrange(134, 1000)
-            self.ypos = random.randrange(80, 625)
-        
+            self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
+
 
     def update(self):
         self.movimento()
+        self.rotacionar()
 
 peixes = pygame.sprite.Group()
-peixes.add(Peixe(3))
+
+peixesPortes = {
+    1: pygame.image.load("graficos/peixes/peixe1.png").convert_alpha(),
+    2: pygame.image.load("graficos/peixes/peixe2.png").convert_alpha(),
+    3: pygame.image.load("graficos/peixes/peixe3.png").convert_alpha(),
+    4: pygame.image.load("graficos/peixes/peixe4.png").convert_alpha(),
+    5: pygame.image.load("graficos/peixes/peixe5.png").convert_alpha(),
+}
+
+confPeixes = [
+    {"sprite": 1, "velocidade": 1, "tamanhos": range(1, 10)},
+    {"sprite": 2, "velocidade": 2, "tamanhos": range(10, 17)},
+    {"sprite": 3, "velocidade": 3, "tamanhos": range(16, 22)},
+    {"sprite": 4, "velocidade": 4, "tamanhos": range(22, 27)},
+    {"sprite": 5, "velocidade": 4, "tamanhos": [27]},
+]
+
 
 # Particulas
 class Particula(pygame.sprite.Sprite):
@@ -324,6 +341,10 @@ while True:
         screen.blit(triangulo, (trianguloX, 45))
         dialogoSistema.escrever()
 
+    print(len(peixes))
+    if random.randint(1, 5) == 5:
+        if len(peixes) < 300:
+            peixes.add(Peixe(random.randint(1, 27)))
     peixes.draw(screen)
     particulas.draw(screen)
     player.draw(screen)
