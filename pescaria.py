@@ -6,13 +6,15 @@ from sys import exit
 # Pygame:
 pygame.init()
 screen = pygame.display.set_mode((1000,625))
-pygame.display.set_caption('Pesca')
+pygame.display.set_caption('Pesca Predatória - JACITEC')
 clock = pygame.time.Clock()
 
 # Player:
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
+        global xPlayer
+        global yPlayer
 
         frames = [ pygame.image.load(f"graficos/canoa/canoa{i}.png").convert_alpha() for i in range(1, 9) ]
 
@@ -32,6 +34,8 @@ class Player(pygame.sprite.Sprite):
         self.image = self.imageOriginal
         self.anguloHistorico = [0,0,0,0,0,0,0,0,0,0]
         self.rect = self.image.get_rect(center = (500,150))
+        xPlayer = self.rect.centerx
+        yPlayer = self.rect.centery
 
     def rotacionar(self):
         anguloRAD = math.atan2(self.rect.centery - cursor_y, self.rect.centerx - cursor_x)
@@ -267,6 +271,57 @@ botaoAberto = pygame.image.load('graficos/botoes/botao-aberto.png').convert_alph
 botaoFechado = pygame.image.load('graficos/botoes/botao-fechado.png').convert_alpha()
 botoesRect = [ botaoAberto.get_rect(topleft = (7, 90 + (59 * i))) for i in range(1, 8) ]
 
+# Isca:
+class Isca(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        global click_x, click_y
+        global xPlayer, yPlayer
+        self.image = pygame.image.load('graficos/isca.png').convert_alpha()
+        self.rect = self.image.get_rect(center = (click_x, click_y))
+        self.timer = 1000
+
+    def puxar(self):
+        global puxarIsca
+        global colisaoIsca
+        print(xPlayer, yPlayer , click_x, click_y)
+        print(self.rect.x, self.rect.y)
+        if puxarIsca:
+            if xPlayer < self.rect.x:
+                self.rect.x -= 1
+            if xPlayer > self.rect.x:
+                self.rect.x += 1
+            if yPlayer < self.rect.y:
+                self.rect.y -= 1
+            if yPlayer > self.rect.y:
+                self.rect.y += 1
+            if xPlayer == self.rect.x and yPlayer == self.rect.y:
+                colisaoIsca = True
+                puxarIsca = False
+                self.kill()
+
+    def update(self):
+        self.puxar()
+        self.timer -= 1
+        if abs(click_x - xPlayer) > 100 or abs(click_y - yPlayer) > 100:
+            self.kill()
+
+puxarIsca = False
+colisaoIsca = True
+isca = pygame.sprite.GroupSingle()
+alcanceSurface = pygame.Surface((1000, 625), pygame.SRCALPHA)
+
+def colisoes():
+    global puxarIsca
+    global colisaoIsca
+    if not isca.sprite: # Se não tiver isca lançada.
+        return False
+    
+    print(colisaoIsca)
+    if colisaoIsca is True:
+        if pygame.sprite.spritecollide(isca.sprite, peixes, True) and puxarIsca is False:  # Remove o peixe colidido.
+            puxarIsca = True
+            colisaoIsca = False
 
 
 # Eventos pygame:
@@ -301,7 +356,7 @@ def processarEventos():
                         if yPlayer > click_y:
                             movery = velocidade
                 elif event.button == 3:
-                    print("Botão direito!")
+                    isca.add(Isca())
 
 while True:
     processarEventos()
@@ -318,10 +373,13 @@ while True:
         if abs(yPlayer - click_y) < 10:
             movery = 0 
 
+    colisoes()
+
     # Updates:
     player.update()
     particulas.update()
     peixes.update()
+    isca.update()
     
     if fala in dialogos:
         dialogo, proxFala = dialogos[fala]
@@ -332,13 +390,21 @@ while True:
 
 
     # Peixes:
-    #print(len(peixes))
     if random.randint(1, 5) == 5:
         if len(peixes) < 300:
             peixes.add(Peixe(random.randint(1, 27)))
 
     # Blits e draws: 
     screen.blit(background, (0,0))
+
+    peixes.draw(screen)
+
+    if isca.sprite:
+        pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), isca.sprite.rect.center)
+    isca.draw(screen)
+    alcanceSurface.fill((0, 0, 0, 0)) # Limpa alcanceSurface
+    pygame.draw.circle(alcanceSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 100, 2)
+    screen.blit(alcanceSurface, (0, 0))
     
     if proxFala != 12:
         screen.blit(gatosario, (153, 8))
@@ -354,15 +420,14 @@ while True:
         
         screen.blit(triangulo, (trianguloX, 45))
         dialogoSistema.escrever()
-            
-    
+
+    particulas.draw(screen)
+
+    player.draw(screen)
+
     screen.blit(botaoAberto, (7, (90)))
     for i in range(1, 9):
         screen.blit(botaoFechado, (7, (90 + (59 * i))))
-
-    peixes.draw(screen)
-    particulas.draw(screen)
-    player.draw(screen)
-
+    
     pygame.display.update()
     clock.tick(60)
