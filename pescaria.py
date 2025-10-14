@@ -284,8 +284,7 @@ class Isca(pygame.sprite.Sprite):
     def puxar(self):
         global puxarIsca
         global colisaoIsca
-        print(xPlayer, yPlayer , click_x, click_y)
-        print(self.rect.x, self.rect.y)
+        global dinheiro
         if puxarIsca:
             if xPlayer < self.rect.x:
                 self.rect.x -= 1
@@ -298,7 +297,9 @@ class Isca(pygame.sprite.Sprite):
             if xPlayer == self.rect.x and yPlayer == self.rect.y:
                 colisaoIsca = True
                 puxarIsca = False
+                dinheiroReceber()
                 self.kill()
+                
 
     def update(self):
         self.puxar()
@@ -317,12 +318,23 @@ def colisoes():
     if not isca.sprite: # Se não tiver isca lançada.
         return False
     
-    print(colisaoIsca)
     if colisaoIsca is True:
         if pygame.sprite.spritecollide(isca.sprite, peixes, True) and puxarIsca is False:  # Remove o peixe colidido.
             puxarIsca = True
             colisaoIsca = False
 
+dinheiro = 0
+
+def dinheiroConsultaImpressao():
+    global dinheiro
+    dinherioSurface = fonte.render(f'{dinheiro}$', False, (22, 23, 26))
+    dinheiroRect = dinherioSurface.get_rect(center = (400, 40))
+    screen.blit(dinherioSurface, dinheiroRect)
+    return dinheiro
+
+def dinheiroReceber():
+    global dinheiro
+    dinheiro += 1
 
 # Eventos pygame:
 def processarEventos():
@@ -429,5 +441,7 @@ while True:
     for i in range(1, 9):
         screen.blit(botaoFechado, (7, (90 + (59 * i))))
     
+    dinheiroConsultaImpressao()
+
     pygame.display.update()
     clock.tick(60)
