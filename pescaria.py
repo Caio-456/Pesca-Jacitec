@@ -319,22 +319,25 @@ def colisoes():
         return False
     
     if colisaoIsca is True:
+        global peixeCapturado
+        peixeCapturado = pygame.sprite.spritecollideany(isca.sprite, peixes)
         if pygame.sprite.spritecollide(isca.sprite, peixes, True) and puxarIsca is False:  # Remove o peixe colidido.
             puxarIsca = True
             colisaoIsca = False
 
 dinheiro = 0
+peixeCapturado = None
 
 def dinheiroConsultaImpressao():
     global dinheiro
-    dinherioSurface = fonte.render(f'{dinheiro}$', False, (22, 23, 26))
-    dinheiroRect = dinherioSurface.get_rect(center = (400, 40))
+    dinherioSurface = pygame.transform.scale_by(fonte.render(f'{dinheiro}SSSs', False, (250, 250, 250)), 2)
+    dinheiroRect = dinherioSurface.get_rect(center = (100, 23))
     screen.blit(dinherioSurface, dinheiroRect)
     return dinheiro
 
 def dinheiroReceber():
-    global dinheiro
-    dinheiro += 1
+    global dinheiro, peixeCapturado
+    dinheiro += peixeCapturado.tamanho * 2
 
 # Eventos pygame:
 def processarEventos():
