@@ -155,7 +155,7 @@ peixesPortes = {
 
 confPeixes = [
     {"sprite": 1, "velocidade": 1, "tamanhos": range(1, 10)},
-    {"sprite": 2, "velocidade": 2, "tamanhos": range(10, 17)},
+    {"sprite": 2, "velocidade": 2, "tamanhos": range(10, 16)},
     {"sprite": 3, "velocidade": 3, "tamanhos": range(16, 22)},
     {"sprite": 4, "velocidade": 4, "tamanhos": range(22, 27)},
     {"sprite": 5, "velocidade": 4, "tamanhos": [27]},
@@ -268,38 +268,56 @@ triangulo = pygame.image.load('graficos/triangulo.png').convert_alpha()
 trianguloX = 900
 
 # Botões:
-botao1Insuficiente = pygame.image.load('graficos/botoes/botao1-insuficiente.png').convert_alpha()
-botao2Insuficiente = pygame.image.load('graficos/botoes/botao2-insuficiente.png').convert_alpha()
-botao3Insuficiente = pygame.image.load('graficos/botoes/botao3-insuficiente.png').convert_alpha()
-botao4Insuficiente = pygame.image.load('graficos/botoes/botao4-insuficiente.png').convert_alpha()
-botao5Insuficiente = pygame.image.load('graficos/botoes/botao5-insuficiente.png').convert_alpha()
-botao6Insuficiente = pygame.image.load('graficos/botoes/botao6-insuficiente.png').convert_alpha()
-botao7Insuficiente = pygame.image.load('graficos/botoes/botao7-insuficiente.png').convert_alpha()
-botao8Insuficiente = pygame.image.load('graficos/botoes/botao8-insuficiente.png').convert_alpha()
-botao9Insuficiente = pygame.image.load('graficos/botoes/botao9-insuficiente.png').convert_alpha()
+class Botao(pygame.sprite.Sprite):
+    def __init__(self, cod):
+        global botoesInsuficientes
+        global botoesComprados
+        global botoesSuficientes
+        global botaoFechado
+        super().__init__()
+        self.cod = cod
+        if self.cod == 0:
+            self.image = botoesInsuficientes[0]
+        else:
+            self.image = botaoFechado
+        self.rect = self.image.get_rect(topleft = (7, (90 + (59 * cod))))
+        match cod:
+            case 0:
+                self.preco = 50
+            case 1:
+                self.preco = 100
+            case 2:
+                self.preco = 200
+            case 3:
+                self.preco = 400
+            case 4:
+                self.preco = 800
+            case 5:
+                self.preco = 1600
+            case 6:
+                self.preco = 3200
+            case 7:
+                self.preco = 6400
+            case 8:
+                self.preco = 12800
+        
+    def cor(self):
+        global dinheiro
+        if dinheiro >= self.preco:
+            self.image = botoesSuficientes[self.cod]
+    
+    def update(self):
+        self.cor()
 
-botao1Suficiente = pygame.image.load('graficos/botoes/botao1-suficiente.png').convert_alpha()
-botao2Suficiente = pygame.image.load('graficos/botoes/botao2-suficiente.png').convert_alpha()
-botao3Suficiente = pygame.image.load('graficos/botoes/botao3-suficiente.png').convert_alpha()
-botao4Suficiente = pygame.image.load('graficos/botoes/botao4-suficiente.png').convert_alpha()
-botao5Suficiente = pygame.image.load('graficos/botoes/botao5-suficiente.png').convert_alpha()
-botao6Suficiente = pygame.image.load('graficos/botoes/botao6-suficiente.png').convert_alpha()
-botao7Suficiente = pygame.image.load('graficos/botoes/botao7-suficiente.png').convert_alpha()
-botao8Suficiente = pygame.image.load('graficos/botoes/botao8-suficiente.png').convert_alpha()
-botao9Suficiente = pygame.image.load('graficos/botoes/botao9-suficiente.png').convert_alpha()
-
-botao1Comprado = pygame.image.load('graficos/botoes/botao1-comprado.png').convert_alpha()
-botao2Comprado = pygame.image.load('graficos/botoes/botao2-comprado.png').convert_alpha()
-botao3Comprado = pygame.image.load('graficos/botoes/botao3-comprado.png').convert_alpha()
-botao4Comprado = pygame.image.load('graficos/botoes/botao4-comprado.png').convert_alpha()
-botao5Comprado = pygame.image.load('graficos/botoes/botao5-comprado.png').convert_alpha()
-botao6Comprado = pygame.image.load('graficos/botoes/botao6-comprado.png').convert_alpha()
-botao7Comprado = pygame.image.load('graficos/botoes/botao7-comprado.png').convert_alpha()
-botao8Comprado = pygame.image.load('graficos/botoes/botao8-comprado.png').convert_alpha()
-botao9Comprado = pygame.image.load('graficos/botoes/botao9-comprado.png').convert_alpha()
-
-
+botoesInsuficientes = [ pygame.image.load(f"graficos/botoes/botao{i}-insuficiente.png").convert_alpha() for i in range(1, 10) ]
+botoesSuficientes = [ pygame.image.load(f"graficos/botoes/botao{i}-suficiente.png").convert_alpha() for i in range(1, 10) ]
+botoesComprados = [ pygame.image.load(f"graficos/botoes/botao{i}-comprado.png").convert_alpha() for i in range(1, 10) ]
 botaoFechado = pygame.image.load('graficos/botoes/botao-fechado.png').convert_alpha()
+botoes = pygame.sprite.Group()
+
+for i in range (9):
+    botoes.add(Botao(i))
+
 # botoesRect = [ botaoAberto.get_rect(topleft = (7, 90 + (59 * i))) for i in range(1, 8) ]
 
 # Isca:
@@ -432,6 +450,7 @@ while True:
     particulas.update()
     peixes.update()
     isca.update()
+    botoes.update()
     
     if fala in dialogos:
         dialogo, proxFala = dialogos[fala]
@@ -479,6 +498,8 @@ while True:
         
         screen.blit(triangulo, (trianguloX, 45))
         dialogoSistema.escrever()
+
+    botoes.draw(screen)
 
     particulas.draw(screen)
 
