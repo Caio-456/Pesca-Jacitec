@@ -226,7 +226,8 @@ class Dialogo:
                 screen.blit(self.texto[i], ((220 + (self.separacao) - 675), 30))
             self.separacao += 9
         self.separacao = 0
-    
+
+
 fonte = pygame.font.Font('graficos/DeterminationMono.ttf', 18)
 transicao = False
 fala = 1
@@ -235,7 +236,7 @@ dialogo1 = 'Parabénnnsss!!!Você está a um passo de ser o novo CEO da Phising 
 dialogo2 = 'Começaremos nossas operações em Gatuma,uma pequena cidade pesqueira entre aMiasília e Peixótina.Uma oportunidade perfeita para subir na sua carreira!'
 dialogo3 = 'Hoje é 9 de Janeiro,ou seja,ainda estamos no período de defeso!!'
 dialogo4 = 'Essa é época onde os pescadores locais tiram férias, e os preços dos peixesaumenta!'
-dialogo5 = 'Nossa meta é arrecadar 200 mil peixes até o fim do período.'
+dialogo5 = 'Nossa meta é arrecadar 85 mil peixes até o fim do período.'
 dialogo6 = 'Controle as operações e mostre teu espirito felino!'
 dialogo7 = 'Ah, só tem um detalhezinho...'
 dialogo8 = 'Talvez estejamos sem verba,por alguns "probleminhas" legais.'
@@ -267,9 +268,39 @@ triangulo = pygame.image.load('graficos/triangulo.png').convert_alpha()
 trianguloX = 900
 
 # Botões:
-botaoAberto = pygame.image.load('graficos/botoes/botao-aberto.png').convert_alpha()
+botao1Insuficiente = pygame.image.load('graficos/botoes/botao1-insuficiente.png').convert_alpha()
+botao2Insuficiente = pygame.image.load('graficos/botoes/botao2-insuficiente.png').convert_alpha()
+botao3Insuficiente = pygame.image.load('graficos/botoes/botao3-insuficiente.png').convert_alpha()
+botao4Insuficiente = pygame.image.load('graficos/botoes/botao4-insuficiente.png').convert_alpha()
+botao5Insuficiente = pygame.image.load('graficos/botoes/botao5-insuficiente.png').convert_alpha()
+botao6Insuficiente = pygame.image.load('graficos/botoes/botao6-insuficiente.png').convert_alpha()
+botao7Insuficiente = pygame.image.load('graficos/botoes/botao7-insuficiente.png').convert_alpha()
+botao8Insuficiente = pygame.image.load('graficos/botoes/botao8-insuficiente.png').convert_alpha()
+botao9Insuficiente = pygame.image.load('graficos/botoes/botao9-insuficiente.png').convert_alpha()
+
+botao1Suficiente = pygame.image.load('graficos/botoes/botao1-suficiente.png').convert_alpha()
+botao2Suficiente = pygame.image.load('graficos/botoes/botao2-suficiente.png').convert_alpha()
+botao3Suficiente = pygame.image.load('graficos/botoes/botao3-suficiente.png').convert_alpha()
+botao4Suficiente = pygame.image.load('graficos/botoes/botao4-suficiente.png').convert_alpha()
+botao5Suficiente = pygame.image.load('graficos/botoes/botao5-suficiente.png').convert_alpha()
+botao6Suficiente = pygame.image.load('graficos/botoes/botao6-suficiente.png').convert_alpha()
+botao7Suficiente = pygame.image.load('graficos/botoes/botao7-suficiente.png').convert_alpha()
+botao8Suficiente = pygame.image.load('graficos/botoes/botao8-suficiente.png').convert_alpha()
+botao9Suficiente = pygame.image.load('graficos/botoes/botao9-suficiente.png').convert_alpha()
+
+botao1Comprado = pygame.image.load('graficos/botoes/botao1-comprado.png').convert_alpha()
+botao2Comprado = pygame.image.load('graficos/botoes/botao2-comprado.png').convert_alpha()
+botao3Comprado = pygame.image.load('graficos/botoes/botao3-comprado.png').convert_alpha()
+botao4Comprado = pygame.image.load('graficos/botoes/botao4-comprado.png').convert_alpha()
+botao5Comprado = pygame.image.load('graficos/botoes/botao5-comprado.png').convert_alpha()
+botao6Comprado = pygame.image.load('graficos/botoes/botao6-comprado.png').convert_alpha()
+botao7Comprado = pygame.image.load('graficos/botoes/botao7-comprado.png').convert_alpha()
+botao8Comprado = pygame.image.load('graficos/botoes/botao8-comprado.png').convert_alpha()
+botao9Comprado = pygame.image.load('graficos/botoes/botao9-comprado.png').convert_alpha()
+
+
 botaoFechado = pygame.image.load('graficos/botoes/botao-fechado.png').convert_alpha()
-botoesRect = [ botaoAberto.get_rect(topleft = (7, 90 + (59 * i))) for i in range(1, 8) ]
+# botoesRect = [ botaoAberto.get_rect(topleft = (7, 90 + (59 * i))) for i in range(1, 8) ]
 
 # Isca:
 class Isca(pygame.sprite.Sprite):
@@ -310,7 +341,7 @@ class Isca(pygame.sprite.Sprite):
 puxarIsca = False
 colisaoIsca = True
 isca = pygame.sprite.GroupSingle()
-alcanceSurface = pygame.Surface((1000, 625), pygame.SRCALPHA)
+transparenteSurface = pygame.Surface((1000, 625), pygame.SRCALPHA)
 
 def colisoes():
     global puxarIsca
@@ -326,18 +357,24 @@ def colisoes():
             colisaoIsca = False
 
 dinheiro = 0
+dinheiroMeta = 85000
+barraLargura = 113
+barraAltura = 19
 peixeCapturado = None
+reflexoBarra = pygame.image.load('graficos/reflexo.png').convert_alpha()
+reflexoBarra.set_alpha(190)
+
 
 def dinheiroConsultaImpressao():
     global dinheiro
-    dinherioSurface = pygame.transform.scale_by(fonte.render(f'{dinheiro}SSSs', False, (250, 250, 250)), 2)
-    dinheiroRect = dinherioSurface.get_rect(center = (100, 23))
+    dinherioSurface = pygame.transform.scale_by(fonte.render(f'{dinheiro:05d}', False, (250, 250, 250)), 2)
+    dinheiroRect = dinherioSurface.get_rect(center = (80, 23))
     screen.blit(dinherioSurface, dinheiroRect)
     return dinheiro
 
 def dinheiroReceber():
     global dinheiro, peixeCapturado
-    dinheiro += peixeCapturado.tamanho * 2
+    dinheiro += peixeCapturado.tamanho // 4
 
 # Eventos pygame:
 def processarEventos():
@@ -410,6 +447,12 @@ while True:
             peixes.add(Peixe(random.randint(1, 27)))
 
     # Blits e draws: 
+    transparenteSurface.fill((0, 0, 0, 0)) # Limpa transparenteSurface
+    
+    # Barra de progresso:
+    progresso = dinheiro / dinheiroMeta
+    larguraAtual = int(barraLargura * progresso)
+    pygame.draw.rect(transparenteSurface, (145, 219, 105), (12, 51, larguraAtual, barraAltura))
     screen.blit(background, (0,0))
 
     peixes.draw(screen)
@@ -417,10 +460,11 @@ while True:
     if isca.sprite:
         pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), isca.sprite.rect.center)
     isca.draw(screen)
-    alcanceSurface.fill((0, 0, 0, 0)) # Limpa alcanceSurface
-    pygame.draw.circle(alcanceSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 100, 2)
-    screen.blit(alcanceSurface, (0, 0))
-    
+    pygame.draw.circle(transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 100, 2)
+    screen.blit(transparenteSurface, (0, 0))
+
+    screen.blit(reflexoBarra, (11, 50))
+
     if proxFala != 12:
         screen.blit(gatosario, (153, 8))
         if trianguloX == 900:
@@ -440,9 +484,10 @@ while True:
 
     player.draw(screen)
 
-    screen.blit(botaoAberto, (7, (90)))
-    for i in range(1, 9):
-        screen.blit(botaoFechado, (7, (90 + (59 * i))))
+
+    #screen.blit(botaoAberto, (7, (90)))
+    #for i in range(1, 9):
+    #    screen.blit(botaoFechado, (7, (90 + (59 * i))))
     
     dinheiroConsultaImpressao()
 
