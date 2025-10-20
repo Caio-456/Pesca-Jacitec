@@ -276,13 +276,13 @@ class Botao(pygame.sprite.Sprite):
         global botaoFechado
         super().__init__()
         self.cod = cod
-        if self.cod == 0:
-            self.image = botoesInsuficientes[0]
-        else:
-            self.image = botaoFechado
+        self.image = botaoFechado
         self.rect = self.image.get_rect(topleft = (7, (90 + (59 * cod))))
+        self.liberado = False
         match cod:
             case 0:
+                self.image = botoesInsuficientes[0]
+                self.liberado = True
                 self.preco = 50
             case 1:
                 self.preco = 100
@@ -303,8 +303,18 @@ class Botao(pygame.sprite.Sprite):
         
     def cor(self):
         global dinheiro
-        if dinheiro >= self.preco:
-            self.image = botoesSuficientes[self.cod]
+        if self.liberado:
+            if dinheiro >= self.preco:
+                self.image = botoesSuficientes[self.cod]
+
+    def comprar(self): # Checado apenas quando mouse está sobre o botão
+        global dinheiro
+        global botaoMax
+        if self.liberado:
+            if dinheiro >= self.preco:
+                botaoMax =+ 1
+                dinheiro -= self.preco
+                self.image = botoesComprados[self.cod]
     
     def update(self):
         self.cor()
@@ -314,11 +324,10 @@ botoesSuficientes = [ pygame.image.load(f"graficos/botoes/botao{i}-suficiente.pn
 botoesComprados = [ pygame.image.load(f"graficos/botoes/botao{i}-comprado.png").convert_alpha() for i in range(1, 10) ]
 botaoFechado = pygame.image.load('graficos/botoes/botao-fechado.png').convert_alpha()
 botoes = pygame.sprite.Group()
+botaoMax = 0
 
 for i in range (9):
     botoes.add(Botao(i))
-
-# botoesRect = [ botaoAberto.get_rect(topleft = (7, 90 + (59 * i))) for i in range(1, 8) ]
 
 # Isca:
 class Isca(pygame.sprite.Sprite):
@@ -334,6 +343,7 @@ class Isca(pygame.sprite.Sprite):
         global puxarIsca
         global colisaoIsca
         global dinheiro
+        global peixeCapturado
         if puxarIsca:
             if xPlayer < self.rect.x:
                 self.rect.x -= 1
@@ -346,9 +356,8 @@ class Isca(pygame.sprite.Sprite):
             if xPlayer == self.rect.x and yPlayer == self.rect.y:
                 colisaoIsca = True
                 puxarIsca = False
-                dinheiroReceber()
+                dinheiroReceber(peixeCapturado.tamanho // 4)
                 self.kill()
-                
 
     def update(self):
         self.puxar()
@@ -361,7 +370,23 @@ colisaoIsca = True
 isca = pygame.sprite.GroupSingle()
 transparenteSurface = pygame.Surface((1000, 625), pygame.SRCALPHA)
 
-def colisoes():
+# Armadilha:
+class Armadilha(pygame.sprite.Sprite):
+    def __init__(self, cod):
+        super().__init__()
+        self.cod = cod
+        self.image = pygame.image.load('graficos/armadilha1.png').convert_alpha()
+        self.rect = self.image.get_rect(center = (random.randrange(134, 1000), random.randrange(80 , 625)))
+    
+    def update(self):
+        self.cor()
+
+armadilhas = pygame.sprite.Group()
+
+for i in range (9):
+    armadilhas.add(Armadilha(i))
+
+def colisoesIsca():
     global puxarIsca
     global colisaoIsca
     if not isca.sprite: # Se não tiver isca lançada.
@@ -374,15 +399,27 @@ def colisoes():
             puxarIsca = True
             colisaoIsca = False
 
-dinheiro = 0
-dinheiroMeta = 85000
-barraLargura = 113
-barraAltura = 19
+def colisaoArmadilhas():
+    global peixeArmadilhado
+    peixeArmadilhado = pygame.sprite.groupcollide(armadilhas, peixes, False, False)
+    if peixeArmadilhado:
+        peixe = peixeArmadilhado.values()
+
+    print(peixeArmadilhado)
+    if pygame.sprite.groupcollide(peixes, armadilhas, True, False):
+        dinheiroReceber(peixe[0].tamanho // 3)
+
+    for sprite1, sprite2_list in peixeArmadilhado.items():
+        print(f"{sprite1} collided with {sprite2_list}")
+
+def colisoes():
+    colisaoArmadilhas()
+    colisoesIsca()
+
 peixeCapturado = None
-reflexoBarra = pygame.image.load('graficos/reflexo.png').convert_alpha()
-reflexoBarra.set_alpha(190)
+peixeArmadilhado = None
 
-
+# Dinheiro:
 def dinheiroConsultaImpressao():
     global dinheiro
     dinherioSurface = pygame.transform.scale_by(fonte.render(f'{dinheiro:05d}', False, (250, 250, 250)), 2)
@@ -390,9 +427,17 @@ def dinheiroConsultaImpressao():
     screen.blit(dinherioSurface, dinheiroRect)
     return dinheiro
 
-def dinheiroReceber():
-    global dinheiro, peixeCapturado
-    dinheiro += peixeCapturado.tamanho // 4
+def dinheiroReceber(quanto):
+    global dinheiro
+    dinheiro += quanto
+
+dinheiro = 0
+dinheiroMeta = 85000
+barraLargura = 113
+barraAltura = 19
+reflexoBarra = pygame.image.load('graficos/reflexo.png').convert_alpha()
+reflexoBarra.set_alpha(190)
+
 
 # Eventos pygame:
 def processarEventos():
@@ -428,6 +473,11 @@ def processarEventos():
                 elif event.button == 3:
                     isca.add(Isca())
 
+            for botao in botoes:
+                if botao.rect.collidepoint((cursor_x, cursor_y)):
+                    if pygame.MOUSEBUTTONDOWN:
+                        botao.comprar()
+
 while True:
     processarEventos()
 
@@ -444,6 +494,8 @@ while True:
             movery = 0 
 
     colisoes()
+
+
 
     # Updates:
     player.update()
@@ -476,6 +528,8 @@ while True:
 
     peixes.draw(screen)
 
+    armadilhas.draw(screen)
+
     if isca.sprite:
         pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), isca.sprite.rect.center)
     isca.draw(screen)
@@ -505,11 +559,6 @@ while True:
 
     player.draw(screen)
 
-
-    #screen.blit(botaoAberto, (7, (90)))
-    #for i in range(1, 9):
-    #    screen.blit(botaoFechado, (7, (90 + (59 * i))))
-    
     dinheiroConsultaImpressao()
 
     pygame.display.update()
