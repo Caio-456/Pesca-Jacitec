@@ -38,6 +38,7 @@ class Player(pygame.sprite.Sprite):
         yPlayer = self.rect.centery
 
     def rotacionar(self):
+        global angulo
         anguloRAD = math.atan2(self.rect.centery - cursor_y, self.rect.centerx - cursor_x)
         angulo = (int(math.degrees(anguloRAD)) - 90)
         self.anguloHistorico.append(angulo)
@@ -48,11 +49,13 @@ class Player(pygame.sprite.Sprite):
             self.rect = self.image.get_rect(center = self.rect.center)
 
     def animacao(self):
+        global angulo
         self.playerIndex += 0.3
         if self.playerIndex > len(self.playerAnimacao):
             self.playerIndex = 0
         self.imageOriginal = self.playerAnimacao[int(self.playerIndex)]
-        self.image = pygame.transform.rotate(self.imageOriginal, -(self.anguloHistorico[-1]))
+        angulo = -(self.anguloHistorico[-1])
+        self.image = pygame.transform.rotate(self.imageOriginal, angulo)
         self.rect = self.image.get_rect(center = self.rect.center)
 
     def mover(self):
@@ -80,7 +83,8 @@ class Player(pygame.sprite.Sprite):
 
     def update(self):
         if cursor_x >= 134 and cursor_y >= 80 and rotacionar is True:
-            self.rotacionar()
+            if not rede:
+                self.rotacionar()
         self.mover()
         if movendo:
             self.animacao()
@@ -276,6 +280,7 @@ class Botao(pygame.sprite.Sprite):
         global botaoFechado
         super().__init__()
         self.cod = cod
+        self.comprado = False
         self.image = botaoFechado
         self.rect = self.image.get_rect(topleft = (7, (90 + (59 * cod))))
         self.liberado = False
@@ -304,19 +309,26 @@ class Botao(pygame.sprite.Sprite):
     def cor(self):
         global dinheiro
         if self.liberado:
-            if dinheiro >= self.preco:
-                self.image = botoesSuficientes[self.cod]
+            if self.comprado is False:
+                if dinheiro >= self.preco:
+                    self.image = botoesSuficientes[self.cod]
+                else:
+                    self.image = botoesInsuficientes[self.cod]
 
     def comprar(self): # Checado apenas quando mouse está sobre o botão
         global dinheiro
         global botaoMax
-        if self.liberado:
-            if dinheiro >= self.preco:
-                botaoMax =+ 1
-                dinheiro -= self.preco
-                self.image = botoesComprados[self.cod]
+        if self.comprado is False:
+            if self.liberado:
+                if dinheiro >= self.preco:
+                    botaoMax += 1
+                    dinheiro -= self.preco
+                    self.image = botoesComprados[self.cod]
+                    self.comprado = True
     
     def update(self):
+        if botaoMax >= self.cod:
+            self.liberado = True
         self.cor()
 
 botoesInsuficientes = [ pygame.image.load(f"graficos/botoes/botao{i}-insuficiente.png").convert_alpha() for i in range(1, 10) ]
@@ -337,7 +349,6 @@ class Isca(pygame.sprite.Sprite):
         global xPlayer, yPlayer
         self.image = pygame.image.load('graficos/isca.png').convert_alpha()
         self.rect = self.image.get_rect(center = (click_x, click_y))
-        self.timer = 1000
 
     def puxar(self):
         global puxarIsca
@@ -356,12 +367,11 @@ class Isca(pygame.sprite.Sprite):
             if xPlayer == self.rect.x and yPlayer == self.rect.y:
                 colisaoIsca = True
                 puxarIsca = False
-                dinheiroReceber(peixeCapturado.tamanho // 4)
+                dinheiroReceber(peixeCapturado.tamanho // 3)
                 self.kill()
 
     def update(self):
         self.puxar()
-        self.timer -= 1
         if abs(click_x - xPlayer) > 100 or abs(click_y - yPlayer) > 100:
             self.kill()
 
@@ -369,6 +379,75 @@ puxarIsca = False
 colisaoIsca = True
 isca = pygame.sprite.GroupSingle()
 transparenteSurface = pygame.Surface((1000, 625), pygame.SRCALPHA)
+
+# Rede:
+class Rede(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        global click_x, click_y
+        global xPlayer, yPlayer
+        global angulo
+        self.imageOriginal = pygame.image.load('graficos/rede.png').convert_alpha()
+        self.image = pygame.transform.rotate(self.imageOriginal, -angulo)
+        self.rect = self.image.get_rect(center = (click_x, click_y))
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def cantosRotacionados(self):
+        redeLargura, redeAltura = self.imageOriginal.get_size()
+        centroX, centroY = self.rect.center
+
+        # Cálculo dos cantos em relação ao centro
+        cantos = [
+            (-redeLargura/2,  redeAltura/2),  # bottomleft
+            ( redeLargura/2,  redeAltura/2),  # bottomright
+        ]
+
+        # Converter o ângulo para radianos
+        rad = math.radians(angulo)
+        cos = math.cos(rad)
+        sin = math.sin(rad)
+
+        # Rotacionando com fórmula matemática
+        rotacionado = []
+        for (x, y) in cantos:
+            rx = centroX + (x * cos - y * sin)
+            ry = centroY + (x * sin + y * cos)
+            rotacionado.append((rx, ry))
+        return rotacionado
+
+
+    def puxar(self):
+        global puxarRede
+        global dinheiro
+        global peixeCapturado
+        global rotacionar
+        if puxarRede:
+            if xPlayer < self.rect.x:
+                self.rect.x -= 1
+            if xPlayer > self.rect.x:
+                self.rect.x += 1
+            if yPlayer < self.rect.y:
+                self.rect.y -= 1
+            if yPlayer > self.rect.y:
+                self.rect.y += 1
+            if xPlayer == self.rect.x and yPlayer == self.rect.y:
+                puxarRede = False
+                rotacionar = True
+                self.kill()
+    def colide_com(self, outro_sprite):
+        if not hasattr(outro_sprite, 'mask'):
+            outro_sprite.mask = pygame.mask.from_surface(outro_sprite.image)
+
+        offset = (outro_sprite.rect.x - self.rect.x, outro_sprite.rect.y - self.rect.y)
+        return self.mask.overlap(outro_sprite.mask, offset) is not None
+
+    def update(self):
+        self.puxar()
+        if abs(click_x - xPlayer) > 300 or abs(click_y - yPlayer) > 200:
+            self.kill()
+
+puxarRede = False
+rede = pygame.sprite.GroupSingle()
 
 # Armadilha:
 class Armadilha(pygame.sprite.Sprite):
@@ -383,9 +462,6 @@ class Armadilha(pygame.sprite.Sprite):
 
 armadilhas = pygame.sprite.Group()
 
-for i in range (9):
-    armadilhas.add(Armadilha(i))
-
 def colisoesIsca():
     global puxarIsca
     global colisaoIsca
@@ -399,22 +475,41 @@ def colisoesIsca():
             puxarIsca = True
             colisaoIsca = False
 
+def colisoesRede():
+    global puxarRede
+    global rotacionar
+    if not rede.sprite:
+        return False
+    
+    global peixeCapturado
+    peixeCapturado = pygame.sprite.spritecollideany(rede.sprite, peixes)
+    if peixeCapturado:
+        if peixeCapturado.tamanho in range(22, 28):
+            if rede.sprite.colide_com(peixeCapturado):
+                print("Pegou o peixe!")
+                puxarRede = True
+                dinheiroReceber(peixeCapturado.tamanho)
+                peixeCapturado.kill()
+            #if pygame.sprite.spritecollide(rede.sprite, peixes, True):  # Remove o peixe colidido.
+                    
+
 def colisaoArmadilhas():
     global peixeArmadilhado
     peixeArmadilhado = pygame.sprite.groupcollide(armadilhas, peixes, False, False)
-    if peixeArmadilhado:
-        peixe = peixeArmadilhado.values()
-
-    print(peixeArmadilhado)
-    if pygame.sprite.groupcollide(peixes, armadilhas, True, False):
-        dinheiroReceber(peixe[0].tamanho // 3)
-
-    for sprite1, sprite2_list in peixeArmadilhado.items():
-        print(f"{sprite1} collided with {sprite2_list}")
+    
+    if peixeArmadilhado: # dict_values([[<Peixe Sprite(in 1 groups)>]])
+        for listaPeixes in peixeArmadilhado.values():
+            for peixe in listaPeixes:
+                if peixe.tamanho in range (10, 22):
+                    peixe.kill()
+                    dinheiroReceber(peixe.tamanho // 4)
 
 def colisoes():
     colisaoArmadilhas()
-    colisoesIsca()
+    if botaoMax > 3:
+        colisoesRede()
+    else:
+        colisoesIsca()
 
 peixeCapturado = None
 peixeArmadilhado = None
@@ -429,6 +524,9 @@ def dinheiroConsultaImpressao():
 
 def dinheiroReceber(quanto):
     global dinheiro
+    global botaoMax
+    if botaoMax > 2:
+        quanto = quanto * 2
     dinheiro += quanto
 
 dinheiro = 0
@@ -446,6 +544,7 @@ def processarEventos():
     global moverx, movery
     global fala
     global transicao
+    global dinheiro
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -471,7 +570,12 @@ def processarEventos():
                         if yPlayer > click_y:
                             movery = velocidade
                 elif event.button == 3:
-                    isca.add(Isca())
+                    dinheiro += 400
+                    if botaoMax > 3:
+                        if not puxarRede:
+                            rede.add(Rede())
+                    else:
+                            isca.add(Isca())
 
             for botao in botoes:
                 if botao.rect.collidepoint((cursor_x, cursor_y)):
@@ -495,13 +599,21 @@ while True:
 
     colisoes()
 
-
+    if botaoMax > 0:
+        if len(armadilhas) < 3:
+            for i in range (3):
+                armadilhas.add(Armadilha(i))
+    if botaoMax > 1:
+        if len(armadilhas) < 9:
+            for i in range (3):
+                armadilhas.add(Armadilha(i))
 
     # Updates:
     player.update()
     particulas.update()
     peixes.update()
     isca.update()
+    rede.update()
     botoes.update()
     
     if fala in dialogos:
@@ -514,7 +626,7 @@ while True:
 
     # Peixes:
     if random.randint(1, 5) == 5:
-        if len(peixes) < 300:
+        if len(peixes) < (300 - (botaoMax * 37)):
             peixes.add(Peixe(random.randint(1, 27)))
 
     # Blits e draws: 
@@ -529,11 +641,19 @@ while True:
     peixes.draw(screen)
 
     armadilhas.draw(screen)
-
-    if isca.sprite:
-        pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), isca.sprite.rect.center)
-    isca.draw(screen)
-    pygame.draw.circle(transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 100, 2)
+    if botaoMax > 3:
+        if rede.sprite:
+            bottomleft, bottomright = rede.sprite.cantosRotacionados()
+            pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), bottomleft)
+            pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), bottomright)
+        rede.draw(screen)
+        pygame.draw.circle(transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 200, 2)
+    else:
+        if isca.sprite:
+            pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), isca.sprite.rect.center)
+        isca.draw(screen)    
+        pygame.draw.circle(transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 100, 2)
+    
     screen.blit(transparenteSurface, (0, 0))
 
     screen.blit(reflexoBarra, (11, 50))
