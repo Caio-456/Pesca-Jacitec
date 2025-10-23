@@ -72,6 +72,7 @@ class Player(pygame.sprite.Sprite):
             rotacionar = False
             self.rect.centerx = self.rect.centerx - moverx
             self.rect.centery = self.rect.centery - movery
+            
             if self.rect.centerx == xPlayer and self.rect.centery == yPlayer:
                 movendo = False
                 rotacionar = True
@@ -117,6 +118,8 @@ class Peixe(pygame.sprite.Sprite):
         self.xpos = random.randrange(134, 1000)
         self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
         self.rect = self.image.get_rect(center = (500, 900))
+        self.timer = (tamanho * 30) + 1
+        self.mover = True
 
     def novaVelocidade(self):
         return random.uniform(self.velocidadeBase * 0.5, self.velocidadeBase * 1.2) # Uniform também arredonda para inteiro.
@@ -128,20 +131,25 @@ class Peixe(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center = self.rect.center)
 
     def movimento(self):
-        if self.rect.x < self.xpos:
-            self.rect.x += self.velocidade
-        if self.rect.x > self.xpos:
-            self.rect.x -= self.velocidade
-        if self.rect.y < self.ypos:
-            self.rect.y += self.velocidade
-        if self.rect.y > self.ypos:
-            self.rect.y -= self.velocidade
-            
-        if abs(self.rect.y - self.ypos) < 10 and abs(self.rect.x - self.xpos) < 10:
-            self.velocidade = self.novaVelocidade()
-            self.xpos = random.randrange(134, 1000)
-            self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
+        if self.mover:
+            if self.rect.x < self.xpos:
+                self.rect.x += self.velocidade
+            if self.rect.x > self.xpos:
+                self.rect.x -= self.velocidade
+            if self.rect.y < self.ypos:
+                self.rect.y += self.velocidade
+            if self.rect.y > self.ypos:
+                self.rect.y -= self.velocidade
 
+            if abs(self.rect.y - self.ypos) < 10 and abs(self.rect.x - self.xpos) < 10:
+                self.velocidade = self.novaVelocidade()
+                self.xpos = random.randrange(134, 1000)
+                self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
+
+    def atordoar(self):
+        self.timer -= 1
+        if self.timer < (self.tamanho * 100 // 5):
+            self.mover = False
 
     def update(self):
         self.movimento()
@@ -236,17 +244,18 @@ fonte = pygame.font.Font('graficos/DeterminationMono.ttf', 18)
 transicao = False
 fala = 1
 dialogoSistema = Dialogo()
-dialogo1 = 'Parabénnnsss!!!Você está a um passo de ser o novo CEO da Phising good & cheap Enterprise©!'
-dialogo2 = 'Começaremos nossas operações em Gatuma,uma pequena cidade pesqueira entre aMiasília e Peixótina.Uma oportunidade perfeita para subir na sua carreira!'
-dialogo3 = 'Hoje é 9 de Janeiro,ou seja,ainda estamos no período de defeso!!'
-dialogo4 = 'Essa é época onde os pescadores locais tiram férias, e os preços dos peixesaumenta!'
-dialogo5 = 'Nossa meta é arrecadar 85 mil peixes até o fim do período.'
-dialogo6 = 'Controle as operações e mostre teu espirito felino!'
-dialogo7 = 'Ah, só tem um detalhezinho...'
-dialogo8 = 'Talvez estejamos sem verba,por alguns "probleminhas" legais.'
-dialogo9 = 'Mas não se preocupe!Como sou grande,magnífico,inteligente,proativo e resiliente,chamei meu sobrinho pra cuidar disso!'
-dialogo10 = 'Tem uma canoa ali,você pode usa-la para pagar as operações!'
+dialogo1 = 'Parabéééénsss!!! Você está a um passo de se tornar o novo CEO da Phishing  Good & Cheap Enterprise©!'
+dialogo2 = 'Começaremos nossas operações em Gatuma, uma pequena cidade pesqueira entre Miausília e Peixótina! Uma chance perfeita pra subir na carreira!'
+dialogo3 = 'Hoje é dia 9 de janeiro... ou seja, ainda estamos no período de defeso!'
+dialogo4 = 'Nessa época, os pescadores locais tiram férias... e o preço dos peixes dis-para!'
+dialogo5 = 'Nossa meta é simples: arrecadar 20 mil miauletas até o fim do período!'
+dialogo6 = 'Mostre seu instinto felino e controle as operações!'
+dialogo7 = 'Ah, só tem um pequeno detalhe...'
+dialogo8 = 'Talvez estejamos sem verba, por causa de uns “probleminhas” legais...'
+dialogo9 = 'Mas não se preocupe! Como sou inteligente, proativo e resiliente, já penseiem tudo!'
+dialogo10 = 'Pesque alguns peixes e compre melhorias ali à esquerda!'
 dialogo11 = 'Boa-sorte-você-consegue-e-tudo-mais-tchau!'
+dialogo12 = 'Ué, cadê os peixes? Missão cumprida?'
 
 dialogos = {
     1: (dialogo1, 2),
@@ -387,10 +396,13 @@ class Rede(pygame.sprite.Sprite):
         global click_x, click_y
         global xPlayer, yPlayer
         global angulo
+        global travar
         self.imageOriginal = pygame.image.load('graficos/rede.png').convert_alpha()
         self.image = pygame.transform.rotate(self.imageOriginal, -angulo)
         self.rect = self.image.get_rect(center = (click_x, click_y))
         self.mask = pygame.mask.from_surface(self.image)
+        self.timer = 100
+        travar = True
 
     def cantosRotacionados(self):
         redeLargura, redeAltura = self.imageOriginal.get_size()
@@ -417,37 +429,107 @@ class Rede(pygame.sprite.Sprite):
 
 
     def puxar(self):
-        global puxarRede
-        global dinheiro
-        global peixeCapturado
-        global rotacionar
+        global puxarRede, rotacionar, travar, xPlayer, yPlayer
+
         if puxarRede:
-            if xPlayer < self.rect.x:
-                self.rect.x -= 1
-            if xPlayer > self.rect.x:
-                self.rect.x += 1
-            if yPlayer < self.rect.y:
-                self.rect.y -= 1
-            if yPlayer > self.rect.y:
-                self.rect.y += 1
-            if xPlayer == self.rect.x and yPlayer == self.rect.y:
+            centroX, centroY = self.rect.center
+            dx = xPlayer - centroX
+            dy = yPlayer - centroY
+            distancia = math.hypot(dx, dy)
+
+            if distancia > 2:
+                centroX += (dx / distancia) * 1
+                centroY += (dy / distancia) * 1
+                self.rect.center = (centroX, centroY)
+            else:
                 puxarRede = False
+                travar = False
                 rotacionar = True
                 self.kill()
-    def colide_com(self, outro_sprite):
-        if not hasattr(outro_sprite, 'mask'):
-            outro_sprite.mask = pygame.mask.from_surface(outro_sprite.image)
 
-        offset = (outro_sprite.rect.x - self.rect.x, outro_sprite.rect.y - self.rect.y)
-        return self.mask.overlap(outro_sprite.mask, offset) is not None
+    def colide_com(self, peixe):
+        if not hasattr(peixe, 'mask'):
+            peixe.mask = pygame.mask.from_surface(peixe.image)
+
+        offset = (peixe.rect.x - self.rect.x, peixe.rect.y - self.rect.y)
+        return self.mask.overlap(peixe.mask, offset) is not None
 
     def update(self):
+        global puxarRede
         self.puxar()
+        self.timer -= 1
+        if self.timer == 0:
+            puxarRede = True
         if abs(click_x - xPlayer) > 300 or abs(click_y - yPlayer) > 200:
             self.kill()
+        
 
 puxarRede = False
 rede = pygame.sprite.GroupSingle()
+
+# Explosivo:
+class Explosivo(pygame.sprite.Sprite):
+    def __init__(self):
+        global click_x, click_y, xPlayer, yPlayer
+        super().__init__()
+        self.image = pygame.image.load('graficos/explosivo.png').convert_alpha()
+        self.rect = self.image.get_rect(center=(xPlayer, yPlayer))
+        
+        self.estado = "movendo"
+        self.raio = 0
+        self.raio_maximo = 220
+        self.alpha = 255
+        self.explodiu = False
+
+    def mover(self):
+        centroX, centroY = self.rect.center
+        dx = click_x - centroX
+        dy = click_y - centroY
+        distancia = math.hypot(dx, dy)
+
+        if distancia > 4:
+            centroX += (dx / distancia) * 4
+            centroY += (dy / distancia) * 4
+            self.rect.center = (centroX, centroY)
+        else:
+            self.estado = "explodindo"
+
+    def update(self):
+        if self.estado == "movendo":
+            self.mover()
+        elif self.estado == "explodindo":
+            self.raio += 5 
+            self.alpha -= 8
+            if self.alpha < 0:
+                self.alpha = 0
+            if self.raio >= self.raio_maximo:
+                self.explodiu = True
+                self.kill()
+        centro_ex = pygame.math.Vector2(self.rect.center)
+        for peixe in peixes.sprites():
+            centro_peixe = pygame.math.Vector2(peixe.rect.center)
+            distancia = centro_ex.distance_to(centro_peixe)
+            # definir "raio do peixe" aproximado (meio da largura/altura)
+            raio_peixe = max(peixe.rect.width, peixe.rect.height) * 0.5
+            if distancia <= self.raio + raio_peixe:
+                dinheiroReceber(peixe.tamanho * 15)
+                peixe.kill()
+                    
+
+
+explosivos = pygame.sprite.Group()
+
+def desenharExplosao(screen, explosivo):
+    if explosivo.estado == "explodindo" and not explosivo.explodiu:
+        surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        pygame.draw.circle(
+            surf,
+            (213, 224, 75, explosivo.alpha),
+            explosivo.rect.center,
+            explosivo.raio
+        )
+        screen.blit(surf, (0, 0))
+
 
 # Armadilha:
 class Armadilha(pygame.sprite.Sprite):
@@ -458,9 +540,20 @@ class Armadilha(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center = (random.randrange(134, 1000), random.randrange(80 , 625)))
     
     def update(self):
-        self.cor()
+        if botaoMax > 4:
+            self.image = pygame.image.load('graficos/armadilha2.png').convert_alpha()
 
 armadilhas = pygame.sprite.Group()
+
+# Cianeto:
+class Cianeto(pygame.sprite.Sprite):
+    def __init__(self, cod):
+        super().__init__()
+        self.cod = cod
+        self.image = pygame.image.load('graficos/cianeto.png').convert_alpha()
+        self.rect = self.image.get_rect(center = (random.randrange(134, 1000), random.randrange(80 , 625)))
+
+cianetos = pygame.sprite.Group()
 
 def colisoesIsca():
     global puxarIsca
@@ -484,13 +577,23 @@ def colisoesRede():
     global peixeCapturado
     peixeCapturado = pygame.sprite.spritecollideany(rede.sprite, peixes)
     if peixeCapturado:
-        if peixeCapturado.tamanho in range(22, 28):
+        if botaoMax > 6:
             if rede.sprite.colide_com(peixeCapturado):
-                print("Pegou o peixe!")
                 puxarRede = True
-                dinheiroReceber(peixeCapturado.tamanho)
+                dinheiroReceber(peixeCapturado.tamanho * 15)
                 peixeCapturado.kill()
-            #if pygame.sprite.spritecollide(rede.sprite, peixes, True):  # Remove o peixe colidido.
+        if botaoMax > 5:
+            if peixeCapturado.tamanho in range(16, 28):
+                if rede.sprite.colide_com(peixeCapturado):
+                    puxarRede = True
+                    dinheiroReceber(peixeCapturado.tamanho * 3)
+                    peixeCapturado.kill()
+        if botaoMax <= 5:
+            if peixeCapturado.tamanho in range(22, 28):
+                if rede.sprite.colide_com(peixeCapturado):
+                    puxarRede = True
+                    dinheiroReceber(peixeCapturado.tamanho * 2)
+                    peixeCapturado.kill()
                     
 
 def colisaoArmadilhas():
@@ -500,9 +603,25 @@ def colisaoArmadilhas():
     if peixeArmadilhado: # dict_values([[<Peixe Sprite(in 1 groups)>]])
         for listaPeixes in peixeArmadilhado.values():
             for peixe in listaPeixes:
-                if peixe.tamanho in range (10, 22):
-                    peixe.kill()
-                    dinheiroReceber(peixe.tamanho // 4)
+                if botaoMax > 4:
+                    if peixe.tamanho in range (1, 22):
+                        peixe.kill()
+                        dinheiroReceber(peixe.tamanho)
+                else:
+                    if peixe.tamanho in range (10, 22):
+                        peixe.kill()
+                        dinheiroReceber(peixe.tamanho // 4)
+
+
+def colisaoCianeto():
+    global peixeAtordoado
+
+    peixeAtordoado = pygame.sprite.groupcollide(cianetos, peixes, False, False)
+    
+    if peixeAtordoado: # dict_values([[<Peixe Sprite(in 1 groups)>]])
+        for listaPeixes in peixeAtordoado.values():
+            for peixe in listaPeixes:
+                peixe.atordoar()
 
 def colisoes():
     colisaoArmadilhas()
@@ -510,6 +629,8 @@ def colisoes():
         colisoesRede()
     else:
         colisoesIsca()
+    if botaoMax > 7:
+        colisaoCianeto()
 
 peixeCapturado = None
 peixeArmadilhado = None
@@ -530,7 +651,7 @@ def dinheiroReceber(quanto):
     dinheiro += quanto
 
 dinheiro = 0
-dinheiroMeta = 85000
+dinheiroMeta = 20000
 barraLargura = 113
 barraAltura = 19
 reflexoBarra = pygame.image.load('graficos/reflexo.png').convert_alpha()
@@ -544,7 +665,7 @@ def processarEventos():
     global moverx, movery
     global fala
     global transicao
-    global dinheiro
+    global travar
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -570,11 +691,13 @@ def processarEventos():
                         if yPlayer > click_y:
                             movery = velocidade
                 elif event.button == 3:
-                    dinheiro += 400
-                    if botaoMax > 3:
-                        if not puxarRede:
+                    if botaoMax > 8:
+                        explosivos.add(Explosivo())
+                    if 8 >= botaoMax > 3:
+                        if not puxarRede and len(rede) == 0:
                             rede.add(Rede())
-                    else:
+                            travar = True
+                    if botaoMax <= 3:
                             isca.add(Isca())
 
             for botao in botoes:
@@ -584,14 +707,19 @@ def processarEventos():
 
 while True:
     processarEventos()
-
     cursor_x, cursor_y = pygame.mouse.get_pos()
     if cursor_x < 134 or cursor_y < 80:
         pygame.mouse.set_cursor(*pygame.cursors.arrow)
     else:
         pygame.mouse.set_cursor(*pygame.cursors.broken_x)
 
+    if len(rede) == 0:
+        puxarRede = False
+
     if movendo:
+        if len(rede) == 1:
+            for i in rede:
+                i.kill()
         if abs(xPlayer - click_x) < 10:
             moverx = 0 
         if abs(yPlayer - click_y) < 10:
@@ -607,6 +735,10 @@ while True:
         if len(armadilhas) < 9:
             for i in range (3):
                 armadilhas.add(Armadilha(i))
+    if botaoMax > 7:
+        if len(cianetos) < 30:
+            for i in range (3):
+                cianetos.add(Cianeto(i))
 
     # Updates:
     player.update()
@@ -615,6 +747,9 @@ while True:
     isca.update()
     rede.update()
     botoes.update()
+    armadilhas.update()
+    if botaoMax > 8:
+        explosivos.update()
     
     if fala in dialogos:
         dialogo, proxFala = dialogos[fala]
@@ -622,11 +757,13 @@ while True:
             dialogoSistema.ateOndeEscrever(dialogo, proxFala)
         elif proxFala == 12:
             travar = False
+            if len(peixes) == 0:
+                dialogoSistema.ateOndeEscrever(dialogo12, 12)
 
 
     # Peixes:
-    if random.randint(1, 5) == 5:
-        if len(peixes) < (300 - (botaoMax * 37)):
+    if random.randint(1, 3) == 3:
+        if len(peixes) < (304 - (botaoMax * 38)):
             peixes.add(Peixe(random.randint(1, 27)))
 
     # Blits e draws: 
@@ -640,20 +777,30 @@ while True:
 
     peixes.draw(screen)
 
+    cianetos.draw(screen)
+
     armadilhas.draw(screen)
-    if botaoMax > 3:
+
+    explosivos.draw(screen)
+    for explosivo in explosivos:
+        desenharExplosao(screen, explosivo)
+
+    if botaoMax > 8:
+        pygame.draw.circle(transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 500, 2)
+    if 8 >= botaoMax > 3:
         if rede.sprite:
             bottomleft, bottomright = rede.sprite.cantosRotacionados()
             pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), bottomleft)
             pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), bottomright)
         rede.draw(screen)
         pygame.draw.circle(transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 200, 2)
-    else:
+    if botaoMax <= 3:
         if isca.sprite:
             pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), isca.sprite.rect.center)
         isca.draw(screen)    
         pygame.draw.circle(transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 100, 2)
-    
+
+
     screen.blit(transparenteSurface, (0, 0))
 
     screen.blit(reflexoBarra, (11, 50))
