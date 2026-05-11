@@ -5,9 +5,10 @@ from sys import exit
 
 # Pygame:
 pygame.init()
-screen = pygame.display.set_mode((1000,625))
-pygame.display.set_caption('Pesca Predatória - JACITEC')
+screen = pygame.display.set_mode((1000, 625))
+pygame.display.set_caption("Pesca Predatória - JACITEC")
 clock = pygame.time.Clock()
+
 
 # Player:
 class Player(pygame.sprite.Sprite):
@@ -16,37 +17,51 @@ class Player(pygame.sprite.Sprite):
         global xPlayer
         global yPlayer
 
-        frames = [ pygame.image.load(f"graficos/canoa/canoa{i}.png").convert_alpha() for i in range(1, 9) ]
+        frames = [
+            pygame.image.load(f"graficos/canoa/canoa{i}.png").convert_alpha()
+            for i in range(1, 9)
+        ]
 
         self.playerIndex = 0
         # A lista tem repetidos para certos frames terem velocidades diferentes
         self.playerAnimacao = [
-            frames[0], frames[0], 
-            frames[1], 
-            frames[2], frames[2], frames[2], frames[2], 
-            frames[3], 
-            frames[4], frames[4], 
-            frames[5], 
-            frames[6], frames[6], frames[6], frames[6], 
-            frames[7]]
-        
-        self.imageOriginal = self.playerAnimacao[self.playerIndex]        
+            frames[0],
+            frames[0],
+            frames[1],
+            frames[2],
+            frames[2],
+            frames[2],
+            frames[2],
+            frames[3],
+            frames[4],
+            frames[4],
+            frames[5],
+            frames[6],
+            frames[6],
+            frames[6],
+            frames[6],
+            frames[7],
+        ]
+
+        self.imageOriginal = self.playerAnimacao[self.playerIndex]
         self.image = self.imageOriginal
-        self.anguloHistorico = [0,0,0,0,0,0,0,0,0,0]
-        self.rect = self.image.get_rect(center = (500,150))
+        self.anguloHistorico = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.rect = self.image.get_rect(center=(500, 150))
         xPlayer = self.rect.centerx
         yPlayer = self.rect.centery
 
     def rotacionar(self):
         global angulo
-        anguloRAD = math.atan2(self.rect.centery - cursor_y, self.rect.centerx - cursor_x)
-        angulo = (int(math.degrees(anguloRAD)) - 90)
+        anguloRAD = math.atan2(
+            self.rect.centery - cursor_y, self.rect.centerx - cursor_x
+        )
+        angulo = int(math.degrees(anguloRAD)) - 90
         self.anguloHistorico.append(angulo)
         if len(self.anguloHistorico) > 10:
             self.anguloHistorico.pop(0)
         if abs((self.anguloHistorico[-1] - self.anguloHistorico[-8])) > 5:
             self.image = pygame.transform.rotate(self.imageOriginal, -angulo)
-            self.rect = self.image.get_rect(center = self.rect.center)
+            self.rect = self.image.get_rect(center=self.rect.center)
 
     def animacao(self):
         global angulo
@@ -56,7 +71,7 @@ class Player(pygame.sprite.Sprite):
         self.imageOriginal = self.playerAnimacao[int(self.playerIndex)]
         angulo = -(self.anguloHistorico[-1])
         self.image = pygame.transform.rotate(self.imageOriginal, angulo)
-        self.rect = self.image.get_rect(center = self.rect.center)
+        self.rect = self.image.get_rect(center=self.rect.center)
 
     def mover(self):
         if travar is False:
@@ -72,7 +87,7 @@ class Player(pygame.sprite.Sprite):
             rotacionar = False
             self.rect.centerx = self.rect.centerx - moverx
             self.rect.centery = self.rect.centery - movery
-            
+
             if self.rect.centerx == xPlayer and self.rect.centery == yPlayer:
                 movendo = False
                 rotacionar = True
@@ -80,7 +95,6 @@ class Player(pygame.sprite.Sprite):
     def gerar_particulas(self, particulas):
         for _ in range(2):
             particulas.add(Particula(self.rect.center))
-
 
     def update(self):
         if cursor_x >= 134 and cursor_y >= 80 and rotacionar is True:
@@ -91,6 +105,7 @@ class Player(pygame.sprite.Sprite):
             self.animacao()
             player.sprite.gerar_particulas(particulas)
 
+
 player = pygame.sprite.GroupSingle()
 moverx = 0
 movery = 0
@@ -99,6 +114,7 @@ velocidade = 3
 player.add(Player())
 rotacionar = False
 travar = True
+
 
 # Peixes:
 class Peixe(pygame.sprite.Sprite):
@@ -117,18 +133,22 @@ class Peixe(pygame.sprite.Sprite):
         self.velocidade = self.novaVelocidade()
         self.xpos = random.randrange(134, 1000)
         self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
-        self.rect = self.image.get_rect(center = (500, 900))
+        self.rect = self.image.get_rect(center=(500, 900))
         self.timer = (tamanho * 30) + 1
         self.mover = True
 
     def novaVelocidade(self):
-        return random.uniform(self.velocidadeBase * 0.5, self.velocidadeBase * 1.2) # Uniform também arredonda para inteiro.
-    
+        return random.uniform(
+            self.velocidadeBase * 0.5, self.velocidadeBase * 1.2
+        )  # Uniform também arredonda para inteiro.
+
     def rotacionar(self):
-        anguloRAD = math.atan2(self.rect.centery - self.ypos, self.rect.centerx - self.xpos)
-        angulo = (int(math.degrees(anguloRAD)) - 90)
+        anguloRAD = math.atan2(
+            self.rect.centery - self.ypos, self.rect.centerx - self.xpos
+        )
+        angulo = int(math.degrees(anguloRAD)) - 90
         self.image = pygame.transform.rotate(self.imagemSemRotacao, -angulo)
-        self.rect = self.image.get_rect(center = self.rect.center)
+        self.rect = self.image.get_rect(center=self.rect.center)
 
     def movimento(self):
         if self.mover:
@@ -155,6 +175,7 @@ class Peixe(pygame.sprite.Sprite):
         self.movimento()
         self.rotacionar()
 
+
 peixes = pygame.sprite.Group()
 
 peixesPortes = {
@@ -178,10 +199,12 @@ confPeixes = [
 class Particula(pygame.sprite.Sprite):
     def __init__(self, posicao):
         super().__init__()
-        self.image = pygame.Surface((3, 2), pygame.SRCALPHA) # SRCALPHA significa que os pixels terão um canal alpha(transparência)
-        pygame.draw.circle(self.image, (143, 211, 255), (2, 2), 3) # cor, centro, raio
-        self.rect = self.image.get_rect(center = posicao)
-        self.moverX = random.uniform(-1, 3) # uniform é quando aceita float
+        self.image = pygame.Surface(
+            (3, 2), pygame.SRCALPHA
+        )  # SRCALPHA significa que os pixels terão um canal alpha(transparência)
+        pygame.draw.circle(self.image, (143, 211, 255), (2, 2), 3)  # cor, centro, raio
+        self.rect = self.image.get_rect(center=posicao)
+        self.moverX = random.uniform(-1, 3)  # uniform é quando aceita float
         self.moverY = random.uniform(1, 3)
         self.timer = 30
 
@@ -194,7 +217,9 @@ class Particula(pygame.sprite.Sprite):
         if self.timer <= 0:
             self.kill()
 
+
 particulas = pygame.sprite.Group()
+
 
 # Diálogo:
 class Dialogo:
@@ -218,10 +243,9 @@ class Dialogo:
             self.texto = []
             transicao = False
 
-        
         if self.posicaoMaxima <= len(dialogo):
             self.posicaoMaxima += 1
-        
+
         if self.posicao <= self.posicaoMaxima:
             texto_surface = fonte.render(dialogo[self.posicao], False, (250, 253, 255))
             self.texto.append(texto_surface)
@@ -240,22 +264,24 @@ class Dialogo:
         self.separacao = 0
 
 
-fonte = pygame.font.Font('graficos/DeterminationMono.ttf', 18)
+fonte = pygame.font.Font("graficos/DeterminationMono.ttf", 18)
 transicao = False
 fala = 1
 dialogoSistema = Dialogo()
-dialogo1 = 'Parabéééénsss!!! Você está a um passo de se tornar o novo CEO da Phishing  Good & Cheap Enterprise©!'
-dialogo2 = 'Começaremos nossas operações em Gatuma, uma pequena cidade pesqueira entre Miausília e Peixótina! Uma chance perfeita pra subir na carreira!'
-dialogo3 = 'Hoje é dia 9 de janeiro... ou seja, ainda estamos no período de defeso!'
-dialogo4 = 'Nessa época, os pescadores locais tiram férias... e o preço dos peixes dis-para!'
-dialogo5 = 'Nossa meta é simples: arrecadar 20 mil miauletas até o fim do período!'
-dialogo6 = 'Mostre seu instinto felino e controle as operações!'
-dialogo7 = 'Ah, só tem um pequeno detalhe...'
-dialogo8 = 'Talvez estejamos sem verba, por causa de uns “probleminhas” legais...'
-dialogo9 = 'Mas não se preocupe! Como sou inteligente, proativo e resiliente, já penseiem tudo!'
-dialogo10 = 'Pesque alguns peixes e compre melhorias ali à esquerda!'
-dialogo11 = 'Boa-sorte-você-consegue-e-tudo-mais-tchau!'
-dialogo12 = 'Ué, cadê os peixes? Missão cumprida?'
+dialogo1 = "Parabéééénsss!!! Você está a um passo de se tornar o novo CEO da Phishing  Good & Cheap Enterprise©!"
+dialogo2 = "Começaremos nossas operações em Gatuma, uma pequena cidade pesqueira entre Miausília e Peixótina! Uma chance perfeita pra subir na carreira!"
+dialogo3 = "Hoje é dia 9 de janeiro... ou seja, ainda estamos no período de defeso!"
+dialogo4 = (
+    "Nessa época, os pescadores locais tiram férias... e o preço dos peixes dis-para!"
+)
+dialogo5 = "Nossa meta é simples: arrecadar 20 mil miauletas até o fim do período!"
+dialogo6 = "Mostre seu instinto felino e controle as operações!"
+dialogo7 = "Ah, só tem um pequeno detalhe..."
+dialogo8 = "Talvez estejamos sem verba, por causa de uns “probleminhas” legais..."
+dialogo9 = "Mas não se preocupe! Como sou inteligente, proativo e resiliente, já penseiem tudo!"
+dialogo10 = "Pesque alguns peixes e compre melhorias ali à esquerda!"
+dialogo11 = "Boa-sorte-você-consegue-e-tudo-mais-tchau!"
+dialogo12 = "Ué, cadê os peixes? Missão cumprida?"
 
 dialogos = {
     1: (dialogo1, 2),
@@ -269,16 +295,17 @@ dialogos = {
     9: (dialogo9, 10),
     10: (dialogo10, 11),
     11: (dialogo11, 0),
-    0: ('NULL', 12)
+    0: ("NULL", 12),
 }
 
 # Background:
-background = pygame.image.load('graficos/background.png').convert_alpha()
+background = pygame.image.load("graficos/background.png").convert_alpha()
 
 # Gatosário:
-gatosario = pygame.image.load('graficos/gatosario.png').convert_alpha()
-triangulo = pygame.image.load('graficos/triangulo.png').convert_alpha()
+gatosario = pygame.image.load("graficos/gatosario.png").convert_alpha()
+triangulo = pygame.image.load("graficos/triangulo.png").convert_alpha()
 trianguloX = 900
+
 
 # Botões:
 class Botao(pygame.sprite.Sprite):
@@ -291,7 +318,7 @@ class Botao(pygame.sprite.Sprite):
         self.cod = cod
         self.comprado = False
         self.image = botaoFechado
-        self.rect = self.image.get_rect(topleft = (7, (90 + (59 * cod))))
+        self.rect = self.image.get_rect(topleft=(7, (90 + (59 * cod))))
         self.liberado = False
         match cod:
             case 0:
@@ -314,7 +341,7 @@ class Botao(pygame.sprite.Sprite):
                 self.preco = 6400
             case 8:
                 self.preco = 12800
-        
+
     def cor(self):
         global dinheiro
         if self.liberado:
@@ -324,7 +351,7 @@ class Botao(pygame.sprite.Sprite):
                 else:
                     self.image = botoesInsuficientes[self.cod]
 
-    def comprar(self): # Checado apenas quando mouse está sobre o botão
+    def comprar(self):  # Checado apenas quando mouse está sobre o botão
         global dinheiro
         global botaoMax
         if self.comprado is False:
@@ -334,21 +361,32 @@ class Botao(pygame.sprite.Sprite):
                     dinheiro -= self.preco
                     self.image = botoesComprados[self.cod]
                     self.comprado = True
-    
+
     def update(self):
         if botaoMax >= self.cod:
             self.liberado = True
         self.cor()
 
-botoesInsuficientes = [ pygame.image.load(f"graficos/botoes/botao{i}-insuficiente.png").convert_alpha() for i in range(1, 10) ]
-botoesSuficientes = [ pygame.image.load(f"graficos/botoes/botao{i}-suficiente.png").convert_alpha() for i in range(1, 10) ]
-botoesComprados = [ pygame.image.load(f"graficos/botoes/botao{i}-comprado.png").convert_alpha() for i in range(1, 10) ]
-botaoFechado = pygame.image.load('graficos/botoes/botao-fechado.png').convert_alpha()
+
+botoesInsuficientes = [
+    pygame.image.load(f"graficos/botoes/botao{i}-insuficiente.png").convert_alpha()
+    for i in range(1, 10)
+]
+botoesSuficientes = [
+    pygame.image.load(f"graficos/botoes/botao{i}-suficiente.png").convert_alpha()
+    for i in range(1, 10)
+]
+botoesComprados = [
+    pygame.image.load(f"graficos/botoes/botao{i}-comprado.png").convert_alpha()
+    for i in range(1, 10)
+]
+botaoFechado = pygame.image.load("graficos/botoes/botao-fechado.png").convert_alpha()
 botoes = pygame.sprite.Group()
 botaoMax = 0
 
-for i in range (9):
+for i in range(9):
     botoes.add(Botao(i))
+
 
 # Isca:
 class Isca(pygame.sprite.Sprite):
@@ -356,8 +394,8 @@ class Isca(pygame.sprite.Sprite):
         super().__init__()
         global click_x, click_y
         global xPlayer, yPlayer
-        self.image = pygame.image.load('graficos/isca.png').convert_alpha()
-        self.rect = self.image.get_rect(center = (click_x, click_y))
+        self.image = pygame.image.load("graficos/isca.png").convert_alpha()
+        self.rect = self.image.get_rect(center=(click_x, click_y))
 
     def puxar(self):
         global puxarIsca
@@ -384,10 +422,12 @@ class Isca(pygame.sprite.Sprite):
         if abs(click_x - xPlayer) > 100 or abs(click_y - yPlayer) > 100:
             self.kill()
 
+
 puxarIsca = False
 colisaoIsca = True
 isca = pygame.sprite.GroupSingle()
 transparenteSurface = pygame.Surface((1000, 625), pygame.SRCALPHA)
+
 
 # Rede:
 class Rede(pygame.sprite.Sprite):
@@ -397,9 +437,9 @@ class Rede(pygame.sprite.Sprite):
         global xPlayer, yPlayer
         global angulo
         global travar
-        self.imageOriginal = pygame.image.load('graficos/rede.png').convert_alpha()
+        self.imageOriginal = pygame.image.load("graficos/rede.png").convert_alpha()
         self.image = pygame.transform.rotate(self.imageOriginal, -angulo)
-        self.rect = self.image.get_rect(center = (click_x, click_y))
+        self.rect = self.image.get_rect(center=(click_x, click_y))
         self.mask = pygame.mask.from_surface(self.image)
         self.timer = 100
         travar = True
@@ -410,8 +450,8 @@ class Rede(pygame.sprite.Sprite):
 
         # Cálculo dos cantos em relação ao centro
         cantos = [
-            (-redeLargura/2,  redeAltura/2),  # bottomleft
-            ( redeLargura/2,  redeAltura/2),  # bottomright
+            (-redeLargura / 2, redeAltura / 2),  # bottomleft
+            (redeLargura / 2, redeAltura / 2),  # bottomright
         ]
 
         # Converter o ângulo para radianos
@@ -421,12 +461,11 @@ class Rede(pygame.sprite.Sprite):
 
         # Rotacionando com fórmula matemática
         rotacionado = []
-        for (x, y) in cantos:
+        for x, y in cantos:
             rx = centroX + (x * cos - y * sin)
             ry = centroY + (x * sin + y * cos)
             rotacionado.append((rx, ry))
         return rotacionado
-
 
     def puxar(self):
         global puxarRede, rotacionar, travar, xPlayer, yPlayer
@@ -448,7 +487,7 @@ class Rede(pygame.sprite.Sprite):
                 self.kill()
 
     def colide_com(self, peixe):
-        if not hasattr(peixe, 'mask'):
+        if not hasattr(peixe, "mask"):
             peixe.mask = pygame.mask.from_surface(peixe.image)
 
         offset = (peixe.rect.x - self.rect.x, peixe.rect.y - self.rect.y)
@@ -462,19 +501,20 @@ class Rede(pygame.sprite.Sprite):
             puxarRede = True
         if abs(click_x - xPlayer) > 300 or abs(click_y - yPlayer) > 200:
             self.kill()
-        
+
 
 puxarRede = False
 rede = pygame.sprite.GroupSingle()
+
 
 # Explosivo:
 class Explosivo(pygame.sprite.Sprite):
     def __init__(self):
         global click_x, click_y, xPlayer, yPlayer
         super().__init__()
-        self.image = pygame.image.load('graficos/explosivo.png').convert_alpha()
+        self.image = pygame.image.load("graficos/explosivo.png").convert_alpha()
         self.rect = self.image.get_rect(center=(xPlayer, yPlayer))
-        
+
         self.estado = "movendo"
         self.raio = 0
         self.raio_maximo = 220
@@ -498,7 +538,7 @@ class Explosivo(pygame.sprite.Sprite):
         if self.estado == "movendo":
             self.mover()
         elif self.estado == "explodindo":
-            self.raio += 5 
+            self.raio += 5
             self.alpha -= 8
             if self.alpha < 0:
                 self.alpha = 0
@@ -514,19 +554,16 @@ class Explosivo(pygame.sprite.Sprite):
             if distancia <= self.raio + raio_peixe:
                 dinheiroReceber(peixe.tamanho * 15)
                 peixe.kill()
-                    
 
 
 explosivos = pygame.sprite.Group()
+
 
 def desenharExplosao(screen, explosivo):
     if explosivo.estado == "explodindo" and not explosivo.explodiu:
         surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         pygame.draw.circle(
-            surf,
-            (213, 224, 75, explosivo.alpha),
-            explosivo.rect.center,
-            explosivo.raio
+            surf, (213, 224, 75, explosivo.alpha), explosivo.rect.center, explosivo.raio
         )
         screen.blit(surf, (0, 0))
 
@@ -536,44 +573,56 @@ class Armadilha(pygame.sprite.Sprite):
     def __init__(self, cod):
         super().__init__()
         self.cod = cod
-        self.image = pygame.image.load('graficos/armadilha1.png').convert_alpha()
-        self.rect = self.image.get_rect(center = (random.randrange(134, 1000), random.randrange(80 , 625)))
-    
+        self.image = pygame.image.load("graficos/armadilha1.png").convert_alpha()
+        self.rect = self.image.get_rect(
+            center=(random.randrange(134, 1000), random.randrange(80, 625))
+        )
+
     def update(self):
         if botaoMax > 4:
-            self.image = pygame.image.load('graficos/armadilha2.png').convert_alpha()
+            self.image = pygame.image.load("graficos/armadilha2.png").convert_alpha()
+
 
 armadilhas = pygame.sprite.Group()
+
 
 # Cianeto:
 class Cianeto(pygame.sprite.Sprite):
     def __init__(self, cod):
         super().__init__()
         self.cod = cod
-        self.image = pygame.image.load('graficos/cianeto.png').convert_alpha()
-        self.rect = self.image.get_rect(center = (random.randrange(134, 1000), random.randrange(80 , 625)))
+        self.image = pygame.image.load("graficos/cianeto.png").convert_alpha()
+        self.rect = self.image.get_rect(
+            center=(random.randrange(134, 1000), random.randrange(80, 625))
+        )
+
 
 cianetos = pygame.sprite.Group()
+
 
 def colisoesIsca():
     global puxarIsca
     global colisaoIsca
-    if not isca.sprite: # Se não tiver isca lançada.
+    if not isca.sprite:  # Se não tiver isca lançada.
         return False
-    
+
     if colisaoIsca is True:
         global peixeCapturado
         peixeCapturado = pygame.sprite.spritecollideany(isca.sprite, peixes)
-        if pygame.sprite.spritecollide(isca.sprite, peixes, True) and puxarIsca is False:  # Remove o peixe colidido.
+        if (
+            pygame.sprite.spritecollide(isca.sprite, peixes, True)
+            and puxarIsca is False
+        ):  # Remove o peixe colidido.
             puxarIsca = True
             colisaoIsca = False
+
 
 def colisoesRede():
     global puxarRede
     global rotacionar
     if not rede.sprite:
         return False
-    
+
     global peixeCapturado
     peixeCapturado = pygame.sprite.spritecollideany(rede.sprite, peixes)
     if peixeCapturado:
@@ -594,21 +643,21 @@ def colisoesRede():
                     puxarRede = True
                     dinheiroReceber(peixeCapturado.tamanho * 2)
                     peixeCapturado.kill()
-                    
+
 
 def colisaoArmadilhas():
     global peixeArmadilhado
     peixeArmadilhado = pygame.sprite.groupcollide(armadilhas, peixes, False, False)
-    
-    if peixeArmadilhado: # dict_values([[<Peixe Sprite(in 1 groups)>]])
+
+    if peixeArmadilhado:  # dict_values([[<Peixe Sprite(in 1 groups)>]])
         for listaPeixes in peixeArmadilhado.values():
             for peixe in listaPeixes:
                 if botaoMax > 4:
-                    if peixe.tamanho in range (1, 22):
+                    if peixe.tamanho in range(1, 22):
                         peixe.kill()
                         dinheiroReceber(peixe.tamanho)
                 else:
-                    if peixe.tamanho in range (10, 22):
+                    if peixe.tamanho in range(10, 22):
                         peixe.kill()
                         dinheiroReceber(peixe.tamanho // 4)
 
@@ -617,11 +666,12 @@ def colisaoCianeto():
     global peixeAtordoado
 
     peixeAtordoado = pygame.sprite.groupcollide(cianetos, peixes, False, False)
-    
-    if peixeAtordoado: # dict_values([[<Peixe Sprite(in 1 groups)>]])
+
+    if peixeAtordoado:  # dict_values([[<Peixe Sprite(in 1 groups)>]])
         for listaPeixes in peixeAtordoado.values():
             for peixe in listaPeixes:
                 peixe.atordoar()
+
 
 def colisoes():
     colisaoArmadilhas()
@@ -632,16 +682,21 @@ def colisoes():
     if botaoMax > 7:
         colisaoCianeto()
 
+
 peixeCapturado = None
 peixeArmadilhado = None
+
 
 # Dinheiro:
 def dinheiroConsultaImpressao():
     global dinheiro
-    dinherioSurface = pygame.transform.scale_by(fonte.render(f'{dinheiro:05d}', False, (250, 250, 250)), 2)
-    dinheiroRect = dinherioSurface.get_rect(center = (80, 23))
+    dinherioSurface = pygame.transform.scale_by(
+        fonte.render(f"{dinheiro:05d}", False, (250, 250, 250)), 2
+    )
+    dinheiroRect = dinherioSurface.get_rect(center=(80, 23))
     screen.blit(dinherioSurface, dinheiroRect)
     return dinheiro
+
 
 def dinheiroReceber(quanto):
     global dinheiro
@@ -650,11 +705,12 @@ def dinheiroReceber(quanto):
         quanto = quanto * 2
     dinheiro += quanto
 
+
 dinheiro = 0
 dinheiroMeta = 20000
 barraLargura = 113
 barraAltura = 19
-reflexoBarra = pygame.image.load('graficos/reflexo.png').convert_alpha()
+reflexoBarra = pygame.image.load("graficos/reflexo.png").convert_alpha()
 reflexoBarra.set_alpha(190)
 
 
@@ -672,7 +728,7 @@ def processarEventos():
             exit()
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            
+
             if round((fala % 1), 2) == 0.1:
                 fala = int(fala)
                 transicao = True
@@ -698,12 +754,13 @@ def processarEventos():
                             rede.add(Rede())
                             travar = True
                     if botaoMax <= 3:
-                            isca.add(Isca())
+                        isca.add(Isca())
 
             for botao in botoes:
                 if botao.rect.collidepoint((cursor_x, cursor_y)):
                     if pygame.MOUSEBUTTONDOWN:
                         botao.comprar()
+
 
 while True:
     processarEventos()
@@ -721,23 +778,23 @@ while True:
             for i in rede:
                 i.kill()
         if abs(xPlayer - click_x) < 10:
-            moverx = 0 
+            moverx = 0
         if abs(yPlayer - click_y) < 10:
-            movery = 0 
+            movery = 0
 
     colisoes()
 
     if botaoMax > 0:
         if len(armadilhas) < 3:
-            for i in range (3):
+            for i in range(3):
                 armadilhas.add(Armadilha(i))
     if botaoMax > 1:
         if len(armadilhas) < 9:
-            for i in range (3):
+            for i in range(3):
                 armadilhas.add(Armadilha(i))
     if botaoMax > 7:
         if len(cianetos) < 30:
-            for i in range (3):
+            for i in range(3):
                 cianetos.add(Cianeto(i))
 
     # Updates:
@@ -750,7 +807,7 @@ while True:
     armadilhas.update()
     if botaoMax > 8:
         explosivos.update()
-    
+
     if fala in dialogos:
         dialogo, proxFala = dialogos[fala]
         if proxFala != 12:
@@ -760,20 +817,21 @@ while True:
             if len(peixes) == 0:
                 dialogoSistema.ateOndeEscrever(dialogo12, 12)
 
-
     # Peixes:
     if random.randint(1, 3) == 3:
         if len(peixes) < (304 - (botaoMax * 38)):
             peixes.add(Peixe(random.randint(1, 27)))
 
-    # Blits e draws: 
-    transparenteSurface.fill((0, 0, 0, 0)) # Limpa transparenteSurface
-    
+    # Blits e draws:
+    transparenteSurface.fill((0, 0, 0, 0))  # Limpa transparenteSurface
+
     # Barra de progresso:
     progresso = dinheiro / dinheiroMeta
     larguraAtual = int(barraLargura * progresso)
-    pygame.draw.rect(transparenteSurface, (145, 219, 105), (12, 51, larguraAtual, barraAltura))
-    screen.blit(background, (0,0))
+    pygame.draw.rect(
+        transparenteSurface, (145, 219, 105), (12, 51, larguraAtual, barraAltura)
+    )
+    screen.blit(background, (0, 0))
 
     peixes.draw(screen)
 
@@ -786,20 +844,27 @@ while True:
         desenharExplosao(screen, explosivo)
 
     if botaoMax > 8:
-        pygame.draw.circle(transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 500, 2)
+        pygame.draw.circle(
+            transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 500, 2
+        )
     if 8 >= botaoMax > 3:
         if rede.sprite:
             bottomleft, bottomright = rede.sprite.cantosRotacionados()
             pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), bottomleft)
             pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), bottomright)
         rede.draw(screen)
-        pygame.draw.circle(transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 200, 2)
+        pygame.draw.circle(
+            transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 200, 2
+        )
     if botaoMax <= 3:
         if isca.sprite:
-            pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), isca.sprite.rect.center)
-        isca.draw(screen)    
-        pygame.draw.circle(transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 100, 2)
-
+            pygame.draw.line(
+                screen, (250, 250, 250), (xPlayer, yPlayer), isca.sprite.rect.center
+            )
+        isca.draw(screen)
+        pygame.draw.circle(
+            transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 100, 2
+        )
 
     screen.blit(transparenteSurface, (0, 0))
 
@@ -811,12 +876,12 @@ while True:
             vem = True
         if trianguloX == 890:
             vem = False
-        
+
         if vem:
             trianguloX -= 0.25
         else:
             trianguloX += 0.25
-        
+
         screen.blit(triangulo, (trianguloX, 45))
         dialogoSistema.escrever()
 
