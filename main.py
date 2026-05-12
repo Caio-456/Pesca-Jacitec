@@ -2,6 +2,8 @@ import pygame
 import math
 import random
 from sys import exit
+from systems import colisoes
+from systems.game_state import GameState
 
 # Pygame:
 pygame.init()
@@ -74,7 +76,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def mover(self):
-        if travar is False:
+        if game_state.impedir_jogador_de_mover is False:
             global moverx
             global xPlayer
             global movery
@@ -113,7 +115,6 @@ movendo = False
 velocidade = 3
 player.add(Player())
 rotacionar = False
-travar = True
 
 
 # Peixes:
@@ -343,27 +344,24 @@ class Botao(pygame.sprite.Sprite):
                 self.preco = 12800
 
     def cor(self):
-        global dinheiro
         if self.liberado:
             if self.comprado is False:
-                if dinheiro >= self.preco:
+                if game_state.dinheiro >= self.preco:
                     self.image = botoesSuficientes[self.cod]
                 else:
                     self.image = botoesInsuficientes[self.cod]
 
     def comprar(self):  # Checado apenas quando mouse está sobre o botão
-        global dinheiro
-        global botaoMax
         if self.comprado is False:
             if self.liberado:
-                if dinheiro >= self.preco:
-                    botaoMax += 1
-                    dinheiro -= self.preco
+                if game_state.dinheiro >= self.preco:
+                    game_state.melhoria_atual += 1
+                    game_state.dinheiro -= self.preco
                     self.image = botoesComprados[self.cod]
                     self.comprado = True
 
     def update(self):
-        if botaoMax >= self.cod:
+        if game_state.melhoria_atual >= self.cod:
             self.liberado = True
         self.cor()
 
@@ -382,7 +380,6 @@ botoesComprados = [
 ]
 botaoFechado = pygame.image.load("graficos/botoes/botao-fechado.png").convert_alpha()
 botoes = pygame.sprite.Group()
-botaoMax = 0
 
 for i in range(9):
     botoes.add(Botao(i))
@@ -392,15 +389,13 @@ for i in range(9):
 class Isca(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        global click_x, click_y
         global xPlayer, yPlayer
         self.image = pygame.image.load("graficos/isca.png").convert_alpha()
-        self.rect = self.image.get_rect(center=(click_x, click_y))
+        self.rect = self.image.get_rect(center=(game_state.click_x, game_state.click_y))
 
     def puxar(self):
         global puxarIsca
         global colisaoIsca
-        global dinheiro
         global peixeCapturado
         if puxarIsca:
             if xPlayer < self.rect.x:
@@ -419,7 +414,7 @@ class Isca(pygame.sprite.Sprite):
 
     def update(self):
         self.puxar()
-        if abs(click_x - xPlayer) > 100 or abs(click_y - yPlayer) > 100:
+        if abs(game_state.click_x - xPlayer) > 100 or abs(game_state.click_y - yPlayer) > 100:
             self.kill()
 
 
@@ -433,16 +428,14 @@ transparenteSurface = pygame.Surface((1000, 625), pygame.SRCALPHA)
 class Rede(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        global click_x, click_y
         global xPlayer, yPlayer
         global angulo
-        global travar
         self.imageOriginal = pygame.image.load("graficos/rede.png").convert_alpha()
         self.image = pygame.transform.rotate(self.imageOriginal, -angulo)
-        self.rect = self.image.get_rect(center=(click_x, click_y))
+        self.rect = self.image.get_rect(center=(game_state.click_x, game_state.click_y))
         self.mask = pygame.mask.from_surface(self.image)
         self.timer = 100
-        travar = True
+        game_state.impedir_jogador_de_mover = True
 
     def cantosRotacionados(self):
         redeLargura, redeAltura = self.imageOriginal.get_size()
@@ -468,7 +461,7 @@ class Rede(pygame.sprite.Sprite):
         return rotacionado
 
     def puxar(self):
-        global puxarRede, rotacionar, travar, xPlayer, yPlayer
+        global puxarRede, rotacionar, xPlayer, yPlayer
 
         if puxarRede:
             centroX, centroY = self.rect.center
@@ -482,7 +475,7 @@ class Rede(pygame.sprite.Sprite):
                 self.rect.center = (centroX, centroY)
             else:
                 puxarRede = False
-                travar = False
+                game_state.impedir_jogador_de_mover = False
                 rotacionar = True
                 self.kill()
 
@@ -499,7 +492,7 @@ class Rede(pygame.sprite.Sprite):
         self.timer -= 1
         if self.timer == 0:
             puxarRede = True
-        if abs(click_x - xPlayer) > 300 or abs(click_y - yPlayer) > 200:
+        if abs(game_state.click_x - xPlayer) > 300 or abs(game_state.click_y - yPlayer) > 200:
             self.kill()
 
 
@@ -510,7 +503,7 @@ rede = pygame.sprite.GroupSingle()
 # Explosivo:
 class Explosivo(pygame.sprite.Sprite):
     def __init__(self):
-        global click_x, click_y, xPlayer, yPlayer
+        global xPlayer, yPlayer
         super().__init__()
         self.image = pygame.image.load("graficos/explosivo.png").convert_alpha()
         self.rect = self.image.get_rect(center=(xPlayer, yPlayer))
@@ -523,8 +516,8 @@ class Explosivo(pygame.sprite.Sprite):
 
     def mover(self):
         centroX, centroY = self.rect.center
-        dx = click_x - centroX
-        dy = click_y - centroY
+        dx = game_state.click_x - centroX
+        dy = game_state.click_y - centroY
         distancia = math.hypot(dx, dy)
 
         if distancia > 4:
@@ -579,7 +572,7 @@ class Armadilha(pygame.sprite.Sprite):
         )
 
     def update(self):
-        if botaoMax > 4:
+        if game_state.melhoria_atual > 4:
             self.image = pygame.image.load("graficos/armadilha2.png").convert_alpha()
 
 
@@ -626,18 +619,18 @@ def colisoesRede():
     global peixeCapturado
     peixeCapturado = pygame.sprite.spritecollideany(rede.sprite, peixes)
     if peixeCapturado:
-        if botaoMax > 6:
+        if game_state.melhoria_atual > 6:
             if rede.sprite.colide_com(peixeCapturado):
                 puxarRede = True
                 dinheiroReceber(peixeCapturado.tamanho * 15)
                 peixeCapturado.kill()
-        if botaoMax > 5:
+        if game_state.melhoria_atual > 5:
             if peixeCapturado.tamanho in range(16, 28):
                 if rede.sprite.colide_com(peixeCapturado):
                     puxarRede = True
                     dinheiroReceber(peixeCapturado.tamanho * 3)
                     peixeCapturado.kill()
-        if botaoMax <= 5:
+        if game_state.melhoria_atual <= 5:
             if peixeCapturado.tamanho in range(22, 28):
                 if rede.sprite.colide_com(peixeCapturado):
                     puxarRede = True
@@ -652,7 +645,7 @@ def colisaoArmadilhas():
     if peixeArmadilhado:  # dict_values([[<Peixe Sprite(in 1 groups)>]])
         for listaPeixes in peixeArmadilhado.values():
             for peixe in listaPeixes:
-                if botaoMax > 4:
+                if game_state.melhoria_atual > 4:
                     if peixe.tamanho in range(1, 22):
                         peixe.kill()
                         dinheiroReceber(peixe.tamanho)
@@ -675,11 +668,11 @@ def colisaoCianeto():
 
 def colisoes():
     colisaoArmadilhas()
-    if botaoMax > 3:
+    if game_state.melhoria_atual > 3:
         colisoesRede()
     else:
         colisoesIsca()
-    if botaoMax > 7:
+    if game_state.melhoria_atual > 7:
         colisaoCianeto()
 
 
@@ -689,24 +682,20 @@ peixeArmadilhado = None
 
 # Dinheiro:
 def dinheiroConsultaImpressao():
-    global dinheiro
     dinherioSurface = pygame.transform.scale_by(
-        fonte.render(f"{dinheiro:05d}", False, (250, 250, 250)), 2
+        fonte.render(f"{game_state.dinheiro:05d}", False, (250, 250, 250)), 2
     )
     dinheiroRect = dinherioSurface.get_rect(center=(80, 23))
     screen.blit(dinherioSurface, dinheiroRect)
-    return dinheiro
+    return game_state.dinheiro
 
 
 def dinheiroReceber(quanto):
-    global dinheiro
-    global botaoMax
-    if botaoMax > 2:
+    if game_state.melhoria_atual > 2:
         quanto = quanto * 2
-    dinheiro += quanto
+    game_state.dinheiro += quanto
 
-
-dinheiro = 0
+game_state = GameState()
 dinheiroMeta = 20000
 barraLargura = 113
 barraAltura = 19
@@ -716,12 +705,11 @@ reflexoBarra.set_alpha(190)
 
 # Eventos pygame:
 def processarEventos():
-    global click_x, click_y
     global rotacionar
     global moverx, movery
     global fala
     global transicao
-    global travar
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -733,27 +721,27 @@ def processarEventos():
                 fala = int(fala)
                 transicao = True
 
-            click_x, click_y = pygame.mouse.get_pos()
+            game_state.click_x,  game_state.click_y = pygame.mouse.get_pos()
             if cursor_x >= 134 and cursor_y >= 80:
                 rotacionar = True
                 if event.button == 1:
-                    if travar is False:
-                        if xPlayer < click_x:
+                    if game_state.impedir_jogador_de_mover is False:
+                        if xPlayer < game_state.click_x:
                             moverx = -velocidade
-                        if xPlayer > click_x:
+                        if xPlayer > game_state.click_x:
                             moverx = velocidade
-                        if yPlayer < click_y:
+                        if yPlayer < game_state.click_y:
                             movery = -velocidade
-                        if yPlayer > click_y:
+                        if yPlayer > game_state.click_y:
                             movery = velocidade
                 elif event.button == 3:
-                    if botaoMax > 8:
+                    if game_state.melhoria_atual > 8:
                         explosivos.add(Explosivo())
-                    if 8 >= botaoMax > 3:
+                    if 8 >= game_state.melhoria_atual > 3:
                         if not puxarRede and len(rede) == 0:
                             rede.add(Rede())
-                            travar = True
-                    if botaoMax <= 3:
+                            game_state.impedir_jogador_de_mover = True
+                    if game_state.melhoria_atual <= 3:
                         isca.add(Isca())
 
             for botao in botoes:
@@ -777,22 +765,22 @@ while True:
         if len(rede) == 1:
             for i in rede:
                 i.kill()
-        if abs(xPlayer - click_x) < 10:
+        if abs(xPlayer - game_state.click_x) < 10:
             moverx = 0
-        if abs(yPlayer - click_y) < 10:
+        if abs(yPlayer - game_state.click_y) < 10:
             movery = 0
 
     colisoes()
 
-    if botaoMax > 0:
+    if game_state.melhoria_atual > 0:
         if len(armadilhas) < 3:
             for i in range(3):
                 armadilhas.add(Armadilha(i))
-    if botaoMax > 1:
+    if game_state.melhoria_atual > 1:
         if len(armadilhas) < 9:
             for i in range(3):
                 armadilhas.add(Armadilha(i))
-    if botaoMax > 7:
+    if game_state.melhoria_atual > 7:
         if len(cianetos) < 30:
             for i in range(3):
                 cianetos.add(Cianeto(i))
@@ -805,7 +793,7 @@ while True:
     rede.update()
     botoes.update()
     armadilhas.update()
-    if botaoMax > 8:
+    if game_state.melhoria_atual > 8:
         explosivos.update()
 
     if fala in dialogos:
@@ -813,20 +801,20 @@ while True:
         if proxFala != 12:
             dialogoSistema.ateOndeEscrever(dialogo, proxFala)
         elif proxFala == 12:
-            travar = False
+            game_state.impedir_jogador_de_mover = False
             if len(peixes) == 0:
                 dialogoSistema.ateOndeEscrever(dialogo12, 12)
 
     # Peixes:
     if random.randint(1, 3) == 3:
-        if len(peixes) < (304 - (botaoMax * 38)):
+        if len(peixes) < (304 - (game_state.melhoria_atual * 38)):
             peixes.add(Peixe(random.randint(1, 27)))
 
     # Blits e draws:
     transparenteSurface.fill((0, 0, 0, 0))  # Limpa transparenteSurface
 
     # Barra de progresso:
-    progresso = dinheiro / dinheiroMeta
+    progresso = game_state.dinheiro / dinheiroMeta
     larguraAtual = int(barraLargura * progresso)
     pygame.draw.rect(
         transparenteSurface, (145, 219, 105), (12, 51, larguraAtual, barraAltura)
@@ -843,11 +831,11 @@ while True:
     for explosivo in explosivos:
         desenharExplosao(screen, explosivo)
 
-    if botaoMax > 8:
+    if game_state.melhoria_atual > 8:
         pygame.draw.circle(
             transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 500, 2
         )
-    if 8 >= botaoMax > 3:
+    if 8 >= game_state.melhoria_atual > 3:
         if rede.sprite:
             bottomleft, bottomright = rede.sprite.cantosRotacionados()
             pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), bottomleft)
@@ -856,7 +844,7 @@ while True:
         pygame.draw.circle(
             transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 200, 2
         )
-    if botaoMax <= 3:
+    if game_state.melhoria_atual <= 3:
         if isca.sprite:
             pygame.draw.line(
                 screen, (250, 250, 250), (xPlayer, yPlayer), isca.sprite.rect.center
