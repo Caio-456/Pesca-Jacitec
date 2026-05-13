@@ -48,7 +48,7 @@ class Player(pygame.sprite.Sprite):
         self.imageOriginal = self.playerAnimacao[self.playerIndex]
         self.image = self.imageOriginal
         self.anguloHistorico = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.rect = self.image.get_rect(center=(500, 150))
+        self.rect = self.image.get_rect(center=(560, 250))
         xPlayer = self.rect.centerx
         yPlayer = self.rect.centery
 
@@ -248,7 +248,7 @@ class Dialogo:
             self.posicaoMaxima += 1
 
         if self.posicao <= self.posicaoMaxima:
-            texto_surface = fonte.render(dialogo[self.posicao], False, (250, 253, 255))
+            texto_surface = fonte_dialogo.render(dialogo[self.posicao], False, (250, 253, 255))
             self.texto.append(texto_surface)
 
         self.posicao += 1
@@ -257,29 +257,28 @@ class Dialogo:
 
     def escrever(self):
         for i in range(self.posicao):
-            if i < 75:
-                screen.blit(self.texto[i], ((220 + (self.separacao)), 15))
+            if i < 58:
+                screen.blit(self.texto[i], ((285 + (self.separacao)), 35))
             else:
-                screen.blit(self.texto[i], ((220 + (self.separacao) - 675), 30))
-            self.separacao += 9
+                screen.blit(self.texto[i], ((285 + (self.separacao) - 696), 53))
+            self.separacao += 12
         self.separacao = 0
 
 
 fonte = pygame.font.Font("graficos/DeterminationMono.ttf", 18)
+fonte_dialogo = pygame.font.Font("graficos/DeterminationMono.ttf", 24)
 transicao = False
 fala = 1
 dialogoSistema = Dialogo()
-dialogo1 = "Parabéééénsss!!! Você está a um passo de se tornar o novo CEO da Phishing  Good & Cheap Enterprise©!"
-dialogo2 = "Começaremos nossas operações em Gatuma, uma pequena cidade pesqueira entre Miausília e Peixótina! Uma chance perfeita pra subir na carreira!"
-dialogo3 = "Hoje é dia 9 de janeiro... ou seja, ainda estamos no período de defeso!"
-dialogo4 = (
-    "Nessa época, os pescadores locais tiram férias... e o preço dos peixes dis-para!"
-)
-dialogo5 = "Nossa meta é simples: arrecadar 20 mil miauletas até o fim do período!"
+dialogo1 = 'Parabéééénsss!!! Você está a um passo de se tornar o novo CEO da "Phishing Good & Cheap Enterprise©"!'
+dialogo2 = "Começaremos nossas operações em Gatuma,uma pequena cidade pesqueira entre Miausília e Peixótina!"
+dialogo3 = "Hoje é dia 9 de janeiro...ou seja,ainda estamos no períodode defeso!"
+dialogo4 = "Nessa época,os pescadores locais tiram férias...e o preço dos peixes dispara!"
+dialogo5 = "Nossa meta é simples:arrecadar 20 mil miauletas até o fim do período!"
 dialogo6 = "Mostre seu instinto felino e controle as operações!"
-dialogo7 = "Ah, só tem um pequeno detalhe..."
-dialogo8 = "Talvez estejamos sem verba, por causa de uns “probleminhas” legais..."
-dialogo9 = "Mas não se preocupe! Como sou inteligente, proativo e resiliente, já penseiem tudo!"
+dialogo7 = "Ah,só tem um pequeno detalhe..."
+dialogo8 = "Talvez estejamos sem verba,por causa de uns probleminhas  legais..."
+dialogo9 = "Mas não se preocupe! Como sou inteligente,proativo e      resiliente,já penseiem tudo!"
 dialogo10 = "Pesque alguns peixes e compre melhorias ali à esquerda!"
 dialogo11 = "Boa-sorte-você-consegue-e-tudo-mais-tchau!"
 dialogo12 = "Ué, cadê os peixes? Missão cumprida?"
@@ -304,8 +303,10 @@ background = pygame.image.load("graficos/background.png").convert_alpha()
 
 # Gatosário:
 gatosario = pygame.image.load("graficos/gatosario.png").convert_alpha()
+gatosario = pygame.transform.scale_by(gatosario, 2)
 triangulo = pygame.image.load("graficos/triangulo.png").convert_alpha()
-trianguloX = 900
+triangulo = pygame.transform.scale_by(triangulo, 2)
+trianguloX = 950
 
 
 # Botões:
@@ -398,6 +399,7 @@ class Isca(pygame.sprite.Sprite):
         global colisaoIsca
         global peixeCapturado
         if puxarIsca:
+            self.image = peixeCapturado.image # type: ignore
             if xPlayer < self.rect.x:
                 self.rect.x -= 1
             if xPlayer > self.rect.x:
@@ -409,7 +411,7 @@ class Isca(pygame.sprite.Sprite):
             if xPlayer == self.rect.x and yPlayer == self.rect.y:
                 colisaoIsca = True
                 puxarIsca = False
-                dinheiroReceber(peixeCapturado.tamanho // 3)
+                dinheiroReceber(peixeCapturado.tamanho // 3) # type: ignore
                 self.kill()
 
     def update(self):
@@ -860,9 +862,9 @@ while True:
 
     if proxFala != 12:
         screen.blit(gatosario, (153, 8))
-        if trianguloX == 900:
+        if trianguloX == 950:
             vem = True
-        if trianguloX == 890:
+        if trianguloX == 940:
             vem = False
 
         if vem:
@@ -870,7 +872,7 @@ while True:
         else:
             trianguloX += 0.25
 
-        screen.blit(triangulo, (trianguloX, 45))
+        screen.blit(triangulo, (trianguloX, 85))
         dialogoSistema.escrever()
 
     botoes.draw(screen)
