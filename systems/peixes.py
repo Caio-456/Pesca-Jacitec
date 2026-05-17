@@ -1,0 +1,74 @@
+import pygame
+import random
+import math
+
+
+class Peixe(pygame.sprite.Sprite):
+    def __init__(self, tamanho):
+        super().__init__()
+        self.tamanho = tamanho
+        for configuracoes in conf_peixes:
+            if tamanho in configuracoes["tamanhos"]:
+                self.image = peixes_portes[configuracoes["sprite"]].convert_alpha()
+                self.imagem_sem_rotacao = self.image
+                self.velocidade_base = configuracoes["velocidade"]
+
+        self.velocidade = self.novaVelocidade()
+        self.xpos = random.randrange(134, 1000)
+        self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
+        self.rect = self.image.get_rect(center=(500, 900))
+        self.timer = (tamanho * 30) + 1
+        self.mover = True
+
+    def novaVelocidade(self):
+        return int(random.uniform(self.velocidade_base, self.velocidade_base * 2))
+
+    def rotacionar(self):
+        anguloRAD = math.atan2(
+            self.rect.centery - self.ypos, self.rect.centerx - self.xpos
+        )
+        angulo = int(math.degrees(anguloRAD)) - 90
+        self.image = pygame.transform.rotate(self.imagem_sem_rotacao, -angulo)
+        self.rect = self.image.get_rect(center=self.rect.center)
+
+    def movimento(self):
+        if self.mover:
+            if self.rect.x < self.xpos:
+                self.rect.x += self.velocidade
+            if self.rect.x > self.xpos:
+                self.rect.x -= self.velocidade
+            if self.rect.y < self.ypos:
+                self.rect.y += self.velocidade
+            if self.rect.y > self.ypos:
+                self.rect.y -= self.velocidade
+
+            if abs(self.rect.y - self.ypos) < 10 and abs(self.rect.x - self.xpos) < 10:
+                self.velocidade = self.novaVelocidade()
+                self.xpos = random.randrange(134, 1000)
+                self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
+
+    def atordoar(self):
+        self.timer -= 1
+        if self.timer < (self.tamanho * 100 // 5):
+            self.mover = False
+
+    def update(self):
+        self.movimento()
+        self.rotacionar()
+
+
+peixes_portes = {
+    1: pygame.image.load("graficos/peixes/peixe1.png"),
+    2: pygame.image.load("graficos/peixes/peixe2.png"),
+    3: pygame.image.load("graficos/peixes/peixe3.png"),
+    4: pygame.image.load("graficos/peixes/peixe4.png"),
+    5: pygame.image.load("graficos/peixes/peixe5.png"),
+}
+
+conf_peixes = [
+    {"sprite": 1, "velocidade": 1, "tamanhos": range(1, 10)},
+    {"sprite": 2, "velocidade": 2, "tamanhos": range(10, 16)},
+    {"sprite": 3, "velocidade": 3, "tamanhos": range(16, 22)},
+    {"sprite": 4, "velocidade": 3, "tamanhos": range(22, 27)},
+    {"sprite": 5, "velocidade": 2, "tamanhos": [27]},
+]
