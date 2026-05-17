@@ -11,3 +11,5 @@ class GameState:
         self.y_player = 0
         self.click_x = 0
         self.click_y = 0
+        self.click_x_alvo = 0
+        self.click_y_alvo = 0

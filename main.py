@@ -373,8 +373,8 @@ class Explosivo(pygame.sprite.Sprite):
         self.raio_maximo = 140
         self.alpha = 255
         self.explodiu = False
-        self.alvo_x = game_state.click_x
-        self.alvo_y = game_state.click_y
+        self.alvo_x = game_state.click_x_alvo
+        self.alvo_y = game_state.click_y_alvo
 
     def mover(self):
         centro_x, centro_y = self.rect.center
@@ -572,8 +572,9 @@ def processarEventos():
             if round((fala % 1), 2) == 0.1:
                 fala = int(fala)
                 transicao = True
-
-            game_state.click_x, game_state.click_y = pygame.mouse.get_pos()
+            if not jogador_esta_se_movendo:
+                game_state.click_x, game_state.click_y = pygame.mouse.get_pos()
+            
             if cursor_x >= limite_x and cursor_y >= limite_y:
                 if event.button == 1:
                     if game_state.impedir_jogador_de_mover is False:
@@ -587,6 +588,7 @@ def processarEventos():
                             mover_y = velocidade
                 elif event.button == 3:
                     if game_state.melhoria_atual > 8:
+                        game_state.click_x_alvo, game_state.click_y_alvo = pygame.mouse.get_pos()
                         explosivos.add(Explosivo())
                     if 8 >= game_state.melhoria_atual > 3:
                         if not puxarRede and len(rede) == 0:
@@ -672,9 +674,7 @@ while True:
     # Barra de progresso:
     progresso = game_state.dinheiro / dinheiroMeta
     larguraAtual = int(barraLargura * progresso)
-    pygame.draw.rect(
-        transparenteSurface, (145, 219, 105), (12, 51, larguraAtual, barraAltura)
-    )
+
     screen.blit(background, (0, 0))
 
     peixes.draw(screen)
@@ -735,9 +735,12 @@ while True:
             2,
         )
 
-    screen.blit(transparenteSurface, (0, 0))
-
     screen.blit(menu, (0, 0))
+    pygame.draw.rect(
+        transparenteSurface, (145, 219, 105), (12, 51, larguraAtual, barraAltura)
+    )
+
+    screen.blit(transparenteSurface, (0, 0))
 
     screen.blit(reflexoBarra, (11, 50))
 
