@@ -2,7 +2,9 @@ import pygame
 import math
 import random
 from sys import exit
-from systems import colisoes
+from systems.peixes import Peixe
+from systems.botoes import Botao
+from systems.particulas import Particula
 from systems.game_state import GameState
 
 # Pygame:
@@ -11,13 +13,13 @@ screen = pygame.display.set_mode((1000, 625))
 pygame.display.set_caption("Pesca Predatória - JACITEC")
 clock = pygame.time.Clock()
 
+game_state = GameState()
+
 
 # Player:
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        global xPlayer
-        global yPlayer
 
         frames = [
             pygame.image.load(f"graficos/canoa/canoa{i}.png").convert_alpha()
@@ -45,180 +47,87 @@ class Player(pygame.sprite.Sprite):
             frames[7],
         ]
 
-        self.imageOriginal = self.playerAnimacao[self.playerIndex]
-        self.image = self.imageOriginal
+        self.imagem_sem_rotacao = self.playerAnimacao[self.playerIndex]
+        self.image = self.imagem_sem_rotacao
         self.anguloHistorico = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.rect = self.image.get_rect(center=(560, 250))
-        xPlayer = self.rect.centerx
-        yPlayer = self.rect.centery
+        game_state.x_player = self.rect.centerx
+        game_state.y_player = self.rect.centery
 
     def rotacionar(self):
-        global angulo
         anguloRAD = math.atan2(
             self.rect.centery - cursor_y, self.rect.centerx - cursor_x
         )
-        angulo = int(math.degrees(anguloRAD)) - 90
-        self.anguloHistorico.append(angulo)
+        game_state.angulo_jogador = int(math.degrees(anguloRAD)) - 90
+        self.anguloHistorico.append(game_state.angulo_jogador)
         if len(self.anguloHistorico) > 10:
             self.anguloHistorico.pop(0)
         if abs((self.anguloHistorico[-1] - self.anguloHistorico[-8])) > 5:
-            self.image = pygame.transform.rotate(self.imageOriginal, -angulo)
+            self.image = pygame.transform.rotate(
+                self.imagem_sem_rotacao, -game_state.angulo_jogador
+            )
             self.rect = self.image.get_rect(center=self.rect.center)
 
     def animacao(self):
-        global angulo
         self.playerIndex += 0.3
         if self.playerIndex > len(self.playerAnimacao):
             self.playerIndex = 0
-        self.imageOriginal = self.playerAnimacao[int(self.playerIndex)]
-        angulo = -(self.anguloHistorico[-1])
-        self.image = pygame.transform.rotate(self.imageOriginal, angulo)
+        self.imagem_sem_rotacao = self.playerAnimacao[int(self.playerIndex)]
+        game_state.angulo_jogador = -(self.anguloHistorico[-1])
+        self.image = pygame.transform.rotate(
+            self.imagem_sem_rotacao, game_state.angulo_jogador
+        )
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def mover(self):
         if game_state.impedir_jogador_de_mover is False:
-            global moverx
-            global xPlayer
-            global movery
-            global yPlayer
-            global movendo
-            global rotacionar
-            xPlayer = self.rect.centerx
-            yPlayer = self.rect.centery
-            movendo = True
-            rotacionar = False
-            self.rect.centerx = self.rect.centerx - moverx
-            self.rect.centery = self.rect.centery - movery
+            global mover_x
+            global mover_y
+            global jogador_esta_se_movendo
+            game_state.x_player = self.rect.centerx
+            game_state.y_player = self.rect.centery
+            jogador_esta_se_movendo = True
+            self.rect.centerx = self.rect.centerx - mover_x
+            self.rect.centery = self.rect.centery - mover_y
 
-            if self.rect.centerx == xPlayer and self.rect.centery == yPlayer:
-                movendo = False
-                rotacionar = True
+            if (
+                self.rect.centerx == game_state.x_player
+                and self.rect.centery == game_state.y_player
+            ):
+                jogador_esta_se_movendo = False
+                game_state.jogador_pode_rotacionar = True
 
     def gerar_particulas(self, particulas):
         for _ in range(2):
             particulas.add(Particula(self.rect.center))
 
     def update(self):
-        if cursor_x >= 134 and cursor_y >= 80 and rotacionar is True:
+        if (
+            cursor_x >= 134
+            and cursor_y >= 80
+            and game_state.jogador_pode_rotacionar is True
+        ):
             if not rede:
                 self.rotacionar()
         self.mover()
-        if movendo:
+        if jogador_esta_se_movendo:
+            game_state.jogador_pode_rotacionar = False
             self.animacao()
             player.sprite.gerar_particulas(particulas)
 
 
 player = pygame.sprite.GroupSingle()
-moverx = 0
-movery = 0
-movendo = False
+mover_x = 0
+mover_y = 0
+jogador_esta_se_movendo = False
 velocidade = 3
 player.add(Player())
-rotacionar = False
 
 
 # Peixes:
-class Peixe(pygame.sprite.Sprite):
-    global confPeixes
-    global peixesPortes
-
-    def __init__(self, tamanho):
-        super().__init__()
-        self.tamanho = tamanho
-        for configuracoes in confPeixes:
-            if tamanho in configuracoes["tamanhos"]:
-                self.image = peixesPortes[configuracoes["sprite"]]
-                self.imagemSemRotacao = self.image
-                self.velocidadeBase = configuracoes["velocidade"]
-
-        self.velocidade = self.novaVelocidade()
-        self.xpos = random.randrange(134, 1000)
-        self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
-        self.rect = self.image.get_rect(center=(500, 900))
-        self.timer = (tamanho * 30) + 1
-        self.mover = True
-
-    def novaVelocidade(self):
-        return random.uniform(
-            self.velocidadeBase * 0.5, self.velocidadeBase * 1.2
-        )  # Uniform também arredonda para inteiro.
-
-    def rotacionar(self):
-        anguloRAD = math.atan2(
-            self.rect.centery - self.ypos, self.rect.centerx - self.xpos
-        )
-        angulo = int(math.degrees(anguloRAD)) - 90
-        self.image = pygame.transform.rotate(self.imagemSemRotacao, -angulo)
-        self.rect = self.image.get_rect(center=self.rect.center)
-
-    def movimento(self):
-        if self.mover:
-            if self.rect.x < self.xpos:
-                self.rect.x += self.velocidade
-            if self.rect.x > self.xpos:
-                self.rect.x -= self.velocidade
-            if self.rect.y < self.ypos:
-                self.rect.y += self.velocidade
-            if self.rect.y > self.ypos:
-                self.rect.y -= self.velocidade
-
-            if abs(self.rect.y - self.ypos) < 10 and abs(self.rect.x - self.xpos) < 10:
-                self.velocidade = self.novaVelocidade()
-                self.xpos = random.randrange(134, 1000)
-                self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
-
-    def atordoar(self):
-        self.timer -= 1
-        if self.timer < (self.tamanho * 100 // 5):
-            self.mover = False
-
-    def update(self):
-        self.movimento()
-        self.rotacionar()
-
-
 peixes = pygame.sprite.Group()
 
-peixesPortes = {
-    1: pygame.image.load("graficos/peixes/peixe1.png").convert_alpha(),
-    2: pygame.image.load("graficos/peixes/peixe2.png").convert_alpha(),
-    3: pygame.image.load("graficos/peixes/peixe3.png").convert_alpha(),
-    4: pygame.image.load("graficos/peixes/peixe4.png").convert_alpha(),
-    5: pygame.image.load("graficos/peixes/peixe5.png").convert_alpha(),
-}
-
-confPeixes = [
-    {"sprite": 1, "velocidade": 1, "tamanhos": range(1, 10)},
-    {"sprite": 2, "velocidade": 2, "tamanhos": range(10, 16)},
-    {"sprite": 3, "velocidade": 3, "tamanhos": range(16, 22)},
-    {"sprite": 4, "velocidade": 4, "tamanhos": range(22, 27)},
-    {"sprite": 5, "velocidade": 4, "tamanhos": [27]},
-]
-
-
 # Particulas
-class Particula(pygame.sprite.Sprite):
-    def __init__(self, posicao):
-        super().__init__()
-        self.image = pygame.Surface(
-            (3, 2), pygame.SRCALPHA
-        )  # SRCALPHA significa que os pixels terão um canal alpha(transparência)
-        pygame.draw.circle(self.image, (143, 211, 255), (2, 2), 3)  # cor, centro, raio
-        self.rect = self.image.get_rect(center=posicao)
-        self.moverX = random.uniform(-1, 3)  # uniform é quando aceita float
-        self.moverY = random.uniform(1, 3)
-        self.timer = 30
-
-    def update(self):
-        self.rect.x += self.moverX
-        self.rect.y += self.moverY
-        self.timer -= 1
-        opacidade = self.timer / 40
-        self.image.set_alpha(abs(int(255 * opacidade)))
-        if self.timer <= 0:
-            self.kill()
-
-
 particulas = pygame.sprite.Group()
 
 
@@ -248,7 +157,9 @@ class Dialogo:
             self.posicaoMaxima += 1
 
         if self.posicao <= self.posicaoMaxima:
-            texto_surface = fonte_dialogo.render(dialogo[self.posicao], False, (250, 253, 255))
+            texto_surface = fonte_dialogo.render(
+                dialogo[self.posicao], False, (250, 253, 255)
+            )
             self.texto.append(texto_surface)
 
         self.posicao += 1
@@ -273,7 +184,9 @@ dialogoSistema = Dialogo()
 dialogo1 = 'Parabéééénsss!!! Você está a um passo de se tornar o novo CEO da "Phishing Good & Cheap Enterprise©"!'
 dialogo2 = "Começaremos nossas operações em Gatuma,uma pequena cidade pesqueira entre Miausília e Peixótina!"
 dialogo3 = "Hoje é dia 9 de janeiro...ou seja,ainda estamos no períodode defeso!"
-dialogo4 = "Nessa época,os pescadores locais tiram férias...e o preço dos peixes dispara!"
+dialogo4 = (
+    "Nessa época,os pescadores locais tiram férias...e o preço dos peixes dispara!"
+)
 dialogo5 = "Nossa meta é simples:arrecadar 20 mil miauletas até o fim do período!"
 dialogo6 = "Mostre seu instinto felino e controle as operações!"
 dialogo7 = "Ah,só tem um pequeno detalhe..."
@@ -310,76 +223,6 @@ trianguloX = 950
 
 
 # Botões:
-class Botao(pygame.sprite.Sprite):
-    def __init__(self, cod):
-        global botoesInsuficientes
-        global botoesComprados
-        global botoesSuficientes
-        global botaoFechado
-        super().__init__()
-        self.cod = cod
-        self.comprado = False
-        self.image = botaoFechado
-        self.rect = self.image.get_rect(topleft=(7, (90 + (59 * cod))))
-        self.liberado = False
-        match cod:
-            case 0:
-                self.image = botoesInsuficientes[0]
-                self.liberado = True
-                self.preco = 50
-            case 1:
-                self.preco = 100
-            case 2:
-                self.preco = 200
-            case 3:
-                self.preco = 400
-            case 4:
-                self.preco = 800
-            case 5:
-                self.preco = 1600
-            case 6:
-                self.preco = 3200
-            case 7:
-                self.preco = 6400
-            case 8:
-                self.preco = 12800
-
-    def cor(self):
-        if self.liberado:
-            if self.comprado is False:
-                if game_state.dinheiro >= self.preco:
-                    self.image = botoesSuficientes[self.cod]
-                else:
-                    self.image = botoesInsuficientes[self.cod]
-
-    def comprar(self):  # Checado apenas quando mouse está sobre o botão
-        if self.comprado is False:
-            if self.liberado:
-                if game_state.dinheiro >= self.preco:
-                    game_state.melhoria_atual += 1
-                    game_state.dinheiro -= self.preco
-                    self.image = botoesComprados[self.cod]
-                    self.comprado = True
-
-    def update(self):
-        if game_state.melhoria_atual >= self.cod:
-            self.liberado = True
-        self.cor()
-
-
-botoesInsuficientes = [
-    pygame.image.load(f"graficos/botoes/botao{i}-insuficiente.png").convert_alpha()
-    for i in range(1, 10)
-]
-botoesSuficientes = [
-    pygame.image.load(f"graficos/botoes/botao{i}-suficiente.png").convert_alpha()
-    for i in range(1, 10)
-]
-botoesComprados = [
-    pygame.image.load(f"graficos/botoes/botao{i}-comprado.png").convert_alpha()
-    for i in range(1, 10)
-]
-botaoFechado = pygame.image.load("graficos/botoes/botao-fechado.png").convert_alpha()
 botoes = pygame.sprite.Group()
 
 for i in range(9):
@@ -390,38 +233,46 @@ for i in range(9):
 class Isca(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        global xPlayer, yPlayer
         self.image = pygame.image.load("graficos/isca.png").convert_alpha()
         self.rect = self.image.get_rect(center=(game_state.click_x, game_state.click_y))
 
     def puxar(self):
-        global puxarIsca
-        global colisaoIsca
+        global colisao_isca
         global peixeCapturado
-        if puxarIsca:
-            self.image = peixeCapturado.image # type: ignore
-            if xPlayer < self.rect.x:
+        if game_state.puxar_isca:
+            self.image = peixeCapturado.imagem_sem_rotacao  # type: ignore
+            self.image = pygame.transform.rotate(
+                self.image, game_state.angulo_jogador + 180
+            )
+            self.rect = self.image.get_rect(center=self.rect.center)
+            if game_state.x_player < self.rect.x:
                 self.rect.x -= 1
-            if xPlayer > self.rect.x:
+            if game_state.x_player > self.rect.x:
                 self.rect.x += 1
-            if yPlayer < self.rect.y:
+            if game_state.y_player < self.rect.y:
                 self.rect.y -= 1
-            if yPlayer > self.rect.y:
+            if game_state.y_player > self.rect.y:
                 self.rect.y += 1
-            if xPlayer == self.rect.x and yPlayer == self.rect.y:
-                colisaoIsca = True
-                puxarIsca = False
-                dinheiroReceber(peixeCapturado.tamanho // 3) # type: ignore
+            if (
+                game_state.x_player == self.rect.x
+                and game_state.y_player == self.rect.y
+            ):
+                colisao_isca = True
+                game_state.puxar_isca = False
+                dinheiroReceber(peixeCapturado.tamanho // 3)  # type: ignore
                 self.kill()
 
     def update(self):
         self.puxar()
-        if abs(game_state.click_x - xPlayer) > 100 or abs(game_state.click_y - yPlayer) > 100:
+        game_state.jogador_pode_rotacionar = False
+        if (
+            abs(game_state.click_x - game_state.x_player) > 100
+            or abs(game_state.click_y - game_state.y_player) > 100
+        ):
             self.kill()
 
 
-puxarIsca = False
-colisaoIsca = True
+colisao_isca = True
 isca = pygame.sprite.GroupSingle()
 transparenteSurface = pygame.Surface((1000, 625), pygame.SRCALPHA)
 
@@ -430,17 +281,17 @@ transparenteSurface = pygame.Surface((1000, 625), pygame.SRCALPHA)
 class Rede(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        global xPlayer, yPlayer
-        global angulo
-        self.imageOriginal = pygame.image.load("graficos/rede.png").convert_alpha()
-        self.image = pygame.transform.rotate(self.imageOriginal, -angulo)
+        self.imagem_sem_rotacao = pygame.image.load("graficos/rede.png").convert_alpha()
+        self.image = pygame.transform.rotate(
+            self.imagem_sem_rotacao, -game_state.angulo_jogador
+        )
         self.rect = self.image.get_rect(center=(game_state.click_x, game_state.click_y))
         self.mask = pygame.mask.from_surface(self.image)
         self.timer = 100
         game_state.impedir_jogador_de_mover = True
 
     def cantosRotacionados(self):
-        redeLargura, redeAltura = self.imageOriginal.get_size()
+        redeLargura, redeAltura = self.imagem_sem_rotacao.get_size()
         centroX, centroY = self.rect.center
 
         # Cálculo dos cantos em relação ao centro
@@ -450,7 +301,7 @@ class Rede(pygame.sprite.Sprite):
         ]
 
         # Converter o ângulo para radianos
-        rad = math.radians(angulo)
+        rad = math.radians(game_state.angulo_jogador)
         cos = math.cos(rad)
         sin = math.sin(rad)
 
@@ -463,22 +314,22 @@ class Rede(pygame.sprite.Sprite):
         return rotacionado
 
     def puxar(self):
-        global puxarRede, rotacionar, xPlayer, yPlayer
+        global puxarRede
 
         if puxarRede:
             centroX, centroY = self.rect.center
-            dx = xPlayer - centroX
-            dy = yPlayer - centroY
+            dx = game_state.x_player - centroX
+            dy = game_state.y_player - centroY
             distancia = math.hypot(dx, dy)
 
             if distancia > 2:
                 centroX += (dx / distancia) * 1
                 centroY += (dy / distancia) * 1
-                self.rect.center = (centroX, centroY)
+                self.rect.center = (centroX, centroY)  # type: ignore
             else:
                 puxarRede = False
                 game_state.impedir_jogador_de_mover = False
-                rotacionar = True
+                game_state.jogador_pode_rotacionar = True
                 self.kill()
 
     def colide_com(self, peixe):
@@ -494,7 +345,10 @@ class Rede(pygame.sprite.Sprite):
         self.timer -= 1
         if self.timer == 0:
             puxarRede = True
-        if abs(game_state.click_x - xPlayer) > 300 or abs(game_state.click_y - yPlayer) > 200:
+        if (
+            abs(game_state.click_x - game_state.x_player) > 300
+            or abs(game_state.click_y - game_state.y_player) > 200
+        ):
             self.kill()
 
 
@@ -505,27 +359,30 @@ rede = pygame.sprite.GroupSingle()
 # Explosivo:
 class Explosivo(pygame.sprite.Sprite):
     def __init__(self):
-        global xPlayer, yPlayer
         super().__init__()
         self.image = pygame.image.load("graficos/explosivo.png").convert_alpha()
-        self.rect = self.image.get_rect(center=(xPlayer, yPlayer))
+        self.rect = self.image.get_rect(
+            center=(game_state.x_player, game_state.y_player)
+        )
 
         self.estado = "movendo"
         self.raio = 0
         self.raio_maximo = 220
         self.alpha = 255
         self.explodiu = False
+        self.alvo_x = game_state.click_x
+        self.alvo_y = game_state.click_y
 
     def mover(self):
         centroX, centroY = self.rect.center
-        dx = game_state.click_x - centroX
-        dy = game_state.click_y - centroY
+        dx = self.alvo_x - centroX
+        dy = self.alvo_y - centroY
         distancia = math.hypot(dx, dy)
 
         if distancia > 4:
             centroX += (dx / distancia) * 4
             centroY += (dy / distancia) * 4
-            self.rect.center = (centroX, centroY)
+            self.rect.center = (centroX, centroY)  # type: ignore
         else:
             self.estado = "explodindo"
 
@@ -596,25 +453,23 @@ cianetos = pygame.sprite.Group()
 
 
 def colisoesIsca():
-    global puxarIsca
-    global colisaoIsca
+    global colisao_isca
     if not isca.sprite:  # Se não tiver isca lançada.
         return False
 
-    if colisaoIsca is True:
+    if colisao_isca is True:
         global peixeCapturado
         peixeCapturado = pygame.sprite.spritecollideany(isca.sprite, peixes)
         if (
             pygame.sprite.spritecollide(isca.sprite, peixes, True)
-            and puxarIsca is False
+            and game_state.puxar_isca is False
         ):  # Remove o peixe colidido.
-            puxarIsca = True
-            colisaoIsca = False
+            game_state.puxar_isca = True
+            colisao_isca = False
 
 
 def colisoesRede():
     global puxarRede
-    global rotacionar
     if not rede.sprite:
         return False
 
@@ -668,7 +523,7 @@ def colisaoCianeto():
                 peixe.atordoar()
 
 
-def colisoes():
+def peixe():
     colisaoArmadilhas()
     if game_state.melhoria_atual > 3:
         colisoesRede()
@@ -697,7 +552,7 @@ def dinheiroReceber(quanto):
         quanto = quanto * 2
     game_state.dinheiro += quanto
 
-game_state = GameState()
+
 dinheiroMeta = 20000
 barraLargura = 113
 barraAltura = 19
@@ -707,11 +562,10 @@ reflexoBarra.set_alpha(190)
 
 # Eventos pygame:
 def processarEventos():
-    global rotacionar
-    global moverx, movery
+    global mover_x, mover_y
     global fala
     global transicao
-    
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -723,19 +577,18 @@ def processarEventos():
                 fala = int(fala)
                 transicao = True
 
-            game_state.click_x,  game_state.click_y = pygame.mouse.get_pos()
+            game_state.click_x, game_state.click_y = pygame.mouse.get_pos()
             if cursor_x >= 134 and cursor_y >= 80:
-                rotacionar = True
                 if event.button == 1:
                     if game_state.impedir_jogador_de_mover is False:
-                        if xPlayer < game_state.click_x:
-                            moverx = -velocidade
-                        if xPlayer > game_state.click_x:
-                            moverx = velocidade
-                        if yPlayer < game_state.click_y:
-                            movery = -velocidade
-                        if yPlayer > game_state.click_y:
-                            movery = velocidade
+                        if game_state.x_player < game_state.click_x:
+                            mover_x = -velocidade
+                        if game_state.x_player > game_state.click_x:
+                            mover_x = velocidade
+                        if game_state.y_player < game_state.click_y:
+                            mover_y = -velocidade
+                        if game_state.y_player > game_state.click_y:
+                            mover_y = velocidade
                 elif event.button == 3:
                     if game_state.melhoria_atual > 8:
                         explosivos.add(Explosivo())
@@ -745,11 +598,13 @@ def processarEventos():
                             game_state.impedir_jogador_de_mover = True
                     if game_state.melhoria_atual <= 3:
                         isca.add(Isca())
+            else:
+                game_state.jogador_pode_rotacionar = False
 
             for botao in botoes:
                 if botao.rect.collidepoint((cursor_x, cursor_y)):
                     if pygame.MOUSEBUTTONDOWN:
-                        botao.comprar()
+                        botao.comprar(game_state)
 
 
 while True:
@@ -763,16 +618,16 @@ while True:
     if len(rede) == 0:
         puxarRede = False
 
-    if movendo:
+    if jogador_esta_se_movendo:
         if len(rede) == 1:
             for i in rede:
                 i.kill()
-        if abs(xPlayer - game_state.click_x) < 10:
-            moverx = 0
-        if abs(yPlayer - game_state.click_y) < 10:
-            movery = 0
+        if abs(game_state.x_player - game_state.click_x) < 10:
+            mover_x = 0
+        if abs(game_state.y_player - game_state.click_y) < 10:
+            mover_y = 0
 
-    colisoes()
+    peixe()
 
     if game_state.melhoria_atual > 0:
         if len(armadilhas) < 3:
@@ -793,7 +648,7 @@ while True:
     peixes.update()
     isca.update()
     rede.update()
-    botoes.update()
+    botoes.update(game_state)
     armadilhas.update()
     if game_state.melhoria_atual > 8:
         explosivos.update()
@@ -835,25 +690,50 @@ while True:
 
     if game_state.melhoria_atual > 8:
         pygame.draw.circle(
-            transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 500, 2
+            transparenteSurface,
+            (250, 250, 250, 80),
+            (game_state.x_player, game_state.y_player),
+            500,
+            2,
         )
     if 8 >= game_state.melhoria_atual > 3:
         if rede.sprite:
             bottomleft, bottomright = rede.sprite.cantosRotacionados()
-            pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), bottomleft)
-            pygame.draw.line(screen, (250, 250, 250), (xPlayer, yPlayer), bottomright)
+            pygame.draw.line(
+                screen,
+                (250, 250, 250),
+                (game_state.x_player, game_state.y_player),
+                bottomleft,
+            )
+            pygame.draw.line(
+                screen,
+                (250, 250, 250),
+                (game_state.x_player, game_state.y_player),
+                bottomright,
+            )
         rede.draw(screen)
         pygame.draw.circle(
-            transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 200, 2
+            transparenteSurface,
+            (250, 250, 250, 80),
+            (game_state.x_player, game_state.y_player),
+            200,
+            2,
         )
     if game_state.melhoria_atual <= 3:
         if isca.sprite:
             pygame.draw.line(
-                screen, (250, 250, 250), (xPlayer, yPlayer), isca.sprite.rect.center
+                screen,
+                (250, 250, 250),
+                (game_state.x_player, game_state.y_player),
+                isca.sprite.rect.center,
             )
         isca.draw(screen)
         pygame.draw.circle(
-            transparenteSurface, (250, 250, 250, 80), (xPlayer, yPlayer), 100, 2
+            transparenteSurface,
+            (250, 250, 250, 80),
+            (game_state.x_player, game_state.y_player),
+            100,
+            2,
         )
 
     screen.blit(transparenteSurface, (0, 0))
