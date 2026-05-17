@@ -14,7 +14,8 @@ pygame.display.set_caption("Pesca Predatória - JACITEC")
 clock = pygame.time.Clock()
 
 game_state = GameState()
-
+limite_y = 106
+limite_x = 145
 
 # Player:
 class Player(pygame.sprite.Sprite):
@@ -103,8 +104,8 @@ class Player(pygame.sprite.Sprite):
 
     def update(self):
         if (
-            cursor_x >= 134
-            and cursor_y >= 80
+            cursor_x >= limite_x
+            and cursor_y >= limite_y
             and game_state.jogador_pode_rotacionar is True
         ):
             self.rotacionar()
@@ -212,6 +213,8 @@ dialogos = {
 
 # Background:
 background = pygame.image.load("graficos/background.png").convert_alpha()
+background = pygame.transform.scale2x(background)
+menu = pygame.image.load("graficos/fundo_menu.png").convert_alpha()
 
 # Gatosário:
 gatosario = pygame.image.load("graficos/gatosario.png").convert_alpha()
@@ -427,7 +430,7 @@ class Armadilha(pygame.sprite.Sprite):
         self.cod = cod
         self.image = pygame.image.load("graficos/armadilha1.png").convert_alpha()
         self.rect = self.image.get_rect(
-            center=(random.randrange(134, 1000), random.randrange(80, 625))
+            center=(random.randrange(limite_x, 1000), random.randrange(limite_y + 50, 625))
         )
 
     def update(self):
@@ -445,7 +448,7 @@ class Cianeto(pygame.sprite.Sprite):
         self.cod = cod
         self.image = pygame.image.load("graficos/cianeto.png").convert_alpha()
         self.rect = self.image.get_rect(
-            center=(random.randrange(134, 1000), random.randrange(80, 625))
+            center=(random.randrange(limite_x, 1000), random.randrange(limite_y, 625))
         )
 
 
@@ -571,7 +574,7 @@ def processarEventos():
                 transicao = True
 
             game_state.click_x, game_state.click_y = pygame.mouse.get_pos()
-            if cursor_x >= 134 and cursor_y >= 80:
+            if cursor_x >= limite_x and cursor_y >= limite_y:
                 if event.button == 1:
                     if game_state.impedir_jogador_de_mover is False:
                         if game_state.x_player < game_state.click_x:
@@ -603,7 +606,7 @@ def processarEventos():
 while True:
     processarEventos()
     cursor_x, cursor_y = pygame.mouse.get_pos()
-    if cursor_x < 134 or cursor_y < 80:
+    if cursor_x < limite_x or cursor_y < limite_y:
         pygame.mouse.set_cursor(*pygame.cursors.arrow)
     else:
         pygame.mouse.set_cursor(*pygame.cursors.broken_x)
@@ -733,6 +736,8 @@ while True:
         )
 
     screen.blit(transparenteSurface, (0, 0))
+
+    screen.blit(menu, (0, 0))
 
     screen.blit(reflexoBarra, (11, 50))
 
