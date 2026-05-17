@@ -6,6 +6,8 @@ import math
 class Peixe(pygame.sprite.Sprite):
     def __init__(self, tamanho):
         super().__init__()
+        if tamanho == 27:
+            self.tamanho = 12
         self.tamanho = tamanho
         for configuracoes in conf_peixes:
             if tamanho in configuracoes["tamanhos"]:
@@ -19,6 +21,7 @@ class Peixe(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(500, 900))
         self.timer = (tamanho * 30) + 1
         self.mover = True
+        self.arrastado = False
 
     def novaVelocidade(self):
         return int(random.uniform(self.velocidade_base, self.velocidade_base * 2))
@@ -47,12 +50,28 @@ class Peixe(pygame.sprite.Sprite):
                 self.xpos = random.randrange(134, 1000)
                 self.ypos = random.randrange(80 + ((self.tamanho * 3)), 625)
 
+    def arrastar(self, game_state):
+        self.mover = False
+        centro_x, centro_y = self.rect.center
+        dx = game_state.x_player - centro_x
+        dy = game_state.y_player - centro_y
+        distancia = math.hypot(dx, dy)
+        if distancia > 30:
+            centro_x += (dx / distancia) * 1
+            centro_y += (dy / distancia) * 1
+            self.rect.center = (centro_x, centro_y)  # type: ignore
+        else:
+            game_state.dinheiro += (35 - self.tamanho) * 40
+            self.kill()
+
     def atordoar(self):
         self.timer -= 1
         if self.timer < (self.tamanho * 100 // 5):
             self.mover = False
 
-    def update(self):
+    def update(self, game_state):
+        if self.arrastado: 
+            self.arrastar(game_state)
         self.movimento()
         self.rotacionar()
 
@@ -66,9 +85,9 @@ peixes_portes = {
 }
 
 conf_peixes = [
-    {"sprite": 1, "velocidade": 1, "tamanhos": range(1, 10)},
-    {"sprite": 2, "velocidade": 2, "tamanhos": range(10, 16)},
-    {"sprite": 3, "velocidade": 3, "tamanhos": range(16, 22)},
-    {"sprite": 4, "velocidade": 3, "tamanhos": range(22, 27)},
+    {"sprite": 1, "velocidade": 1, "tamanhos": range(1, 11)},
+    {"sprite": 2, "velocidade": 1, "tamanhos": range(11, 19)},
+    {"sprite": 3, "velocidade": 3, "tamanhos": range(19, 25)},
+    {"sprite": 4, "velocidade": 2, "tamanhos": range(25, 27)},
     {"sprite": 5, "velocidade": 2, "tamanhos": [27]},
 ]

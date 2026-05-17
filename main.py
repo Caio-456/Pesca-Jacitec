@@ -107,8 +107,7 @@ class Player(pygame.sprite.Sprite):
             and cursor_y >= 80
             and game_state.jogador_pode_rotacionar is True
         ):
-            if not rede:
-                self.rotacionar()
+            self.rotacionar()
         self.mover()
         if jogador_esta_se_movendo:
             game_state.jogador_pode_rotacionar = False
@@ -292,7 +291,7 @@ class Rede(pygame.sprite.Sprite):
 
     def cantosRotacionados(self):
         redeLargura, redeAltura = self.imagem_sem_rotacao.get_size()
-        centroX, centroY = self.rect.center
+        centro_x, centro_y = self.rect.center
 
         # Cálculo dos cantos em relação ao centro
         cantos = [
@@ -308,8 +307,8 @@ class Rede(pygame.sprite.Sprite):
         # Rotacionando com fórmula matemática
         rotacionado = []
         for x, y in cantos:
-            rx = centroX + (x * cos - y * sin)
-            ry = centroY + (x * sin + y * cos)
+            rx = centro_x + (x * cos - y * sin)
+            ry = centro_y + (x * sin + y * cos)
             rotacionado.append((rx, ry))
         return rotacionado
 
@@ -317,15 +316,15 @@ class Rede(pygame.sprite.Sprite):
         global puxarRede
 
         if puxarRede:
-            centroX, centroY = self.rect.center
-            dx = game_state.x_player - centroX
-            dy = game_state.y_player - centroY
+            centro_x, centro_y = self.rect.center
+            dx = game_state.x_player - centro_x
+            dy = game_state.y_player - centro_y
             distancia = math.hypot(dx, dy)
 
             if distancia > 2:
-                centroX += (dx / distancia) * 1
-                centroY += (dy / distancia) * 1
-                self.rect.center = (centroX, centroY)  # type: ignore
+                centro_x += (dx / distancia) * 1
+                centro_y += (dy / distancia) * 1
+                self.rect.center = (centro_x, centro_y)  # type: ignore
             else:
                 puxarRede = False
                 game_state.impedir_jogador_de_mover = False
@@ -341,6 +340,7 @@ class Rede(pygame.sprite.Sprite):
 
     def update(self):
         global puxarRede
+        game_state.jogador_pode_rotacionar = False
         self.puxar()
         self.timer -= 1
         if self.timer == 0:
@@ -367,22 +367,22 @@ class Explosivo(pygame.sprite.Sprite):
 
         self.estado = "movendo"
         self.raio = 0
-        self.raio_maximo = 220
+        self.raio_maximo = 140
         self.alpha = 255
         self.explodiu = False
         self.alvo_x = game_state.click_x
         self.alvo_y = game_state.click_y
 
     def mover(self):
-        centroX, centroY = self.rect.center
-        dx = self.alvo_x - centroX
-        dy = self.alvo_y - centroY
+        centro_x, centro_y = self.rect.center
+        dx = self.alvo_x - centro_x
+        dy = self.alvo_y - centro_y
         distancia = math.hypot(dx, dy)
 
         if distancia > 4:
-            centroX += (dx / distancia) * 4
-            centroY += (dy / distancia) * 4
-            self.rect.center = (centroX, centroY)  # type: ignore
+            centro_x += (dx / distancia) * 4
+            centro_y += (dy / distancia) * 4
+            self.rect.center = (centro_x, centro_y)  # type: ignore
         else:
             self.estado = "explodindo"
 
@@ -390,8 +390,8 @@ class Explosivo(pygame.sprite.Sprite):
         if self.estado == "movendo":
             self.mover()
         elif self.estado == "explodindo":
-            self.raio += 5
-            self.alpha -= 8
+            self.raio += 6
+            self.alpha -= 10
             if self.alpha < 0:
                 self.alpha = 0
             if self.raio >= self.raio_maximo:
@@ -415,7 +415,7 @@ def desenharExplosao(screen, explosivo):
     if explosivo.estado == "explodindo" and not explosivo.explodiu:
         surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         pygame.draw.circle(
-            surf, (213, 224, 75, explosivo.alpha), explosivo.rect.center, explosivo.raio
+            surf, (213, 224, 75, explosivo.alpha), explosivo.rect.center, explosivo.raio + 20
         )
         screen.blit(surf, (0, 0))
 
@@ -472,28 +472,21 @@ def colisoesRede():
     global puxarRede
     if not rede.sprite:
         return False
-
+    puxarRede = True
     global peixeCapturado
     peixeCapturado = pygame.sprite.spritecollideany(rede.sprite, peixes)
     if peixeCapturado:
         if game_state.melhoria_atual > 6:
             if rede.sprite.colide_com(peixeCapturado):
-                puxarRede = True
-                dinheiroReceber(peixeCapturado.tamanho * 15)
-                peixeCapturado.kill()
+                peixeCapturado.arrastado = True
         if game_state.melhoria_atual > 5:
-            if peixeCapturado.tamanho in range(16, 28):
+            if peixeCapturado.tamanho in range(10, 28):
                 if rede.sprite.colide_com(peixeCapturado):
-                    puxarRede = True
-                    dinheiroReceber(peixeCapturado.tamanho * 3)
-                    peixeCapturado.kill()
+                    peixeCapturado.arrastado = True
         if game_state.melhoria_atual <= 5:
             if peixeCapturado.tamanho in range(22, 28):
                 if rede.sprite.colide_com(peixeCapturado):
-                    puxarRede = True
-                    dinheiroReceber(peixeCapturado.tamanho * 2)
-                    peixeCapturado.kill()
-
+                    peixeCapturado.arrastado = True
 
 def colisaoArmadilhas():
     global peixeArmadilhado
@@ -645,7 +638,7 @@ while True:
     # Updates:
     player.update()
     particulas.update()
-    peixes.update()
+    peixes.update(game_state)
     isca.update()
     rede.update()
     botoes.update(game_state)
@@ -664,8 +657,11 @@ while True:
 
     # Peixes:
     if random.randint(1, 3) == 3:
-        if len(peixes) < (304 - (game_state.melhoria_atual * 38)):
-            peixes.add(Peixe(random.randint(1, 27)))
+        if len(peixes) < (320 - (game_state.melhoria_atual * 40)):
+            tamanho = random.randint(1, 27)
+            if tamanho == 27:
+                tamanho = random.randint(20, 27)
+            peixes.add(Peixe(tamanho))
 
     # Blits e draws:
     transparenteSurface.fill((0, 0, 0, 0))  # Limpa transparenteSurface
